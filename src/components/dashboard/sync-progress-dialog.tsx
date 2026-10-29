@@ -179,6 +179,7 @@ function ProviderRowView({
   const label = info?.name ?? row.provider;
   const color = info?.color ?? "#888";
   const isInteractive2fa = row.status === "awaiting-otp";
+  const isInvestment = info?.kind === "investment";
 
   return (
     <div
@@ -214,7 +215,8 @@ function ProviderRowView({
           <div className="truncate text-sm font-medium">{label}</div>
           <div className="truncate text-[11px] text-muted-foreground">
             {row.status === "idle" && "Waiting…"}
-            {row.status === "running" && "Pulling transactions…"}
+            {row.status === "running" &&
+              (isInvestment ? "Reading portfolio…" : "Pulling transactions…")}
             {row.status === "awaiting-otp" &&
               "Enter the one-time code we just sent you"}
             {row.status === "manual-2fa" && (
@@ -224,7 +226,9 @@ function ProviderRowView({
               </span>
             )}
             {row.status === "done" &&
-              (row.added === 0 && row.updated === 0
+              (isInvestment
+                ? "Portfolio updated"
+                : row.added === 0 && row.updated === 0
                 ? "Already up to date"
                 : `+${row.added} new${row.updated ? ` · ${row.updated} updated` : ""}`)}
             {row.status === "error" &&

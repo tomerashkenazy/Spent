@@ -38,6 +38,10 @@ import {
   scrapePepperFirstTime,
   scrapePepperWithToken,
 } from "@/server/scrapers/pepper";
+import {
+  scrapePsagotWithOtp,
+  scrapePsagotWithSession,
+} from "@/server/scrapers/psagot";
 import { createAIProvider } from "@/server/ai/factory";
 import { ensureOllamaRunning } from "@/server/ai/ollama-manager";
 import { toLocalISODate } from "@/server/lib/date-utils";
@@ -133,6 +137,9 @@ async function runScrapeForProvider(args: RunScrapeArgs): Promise<ScrapeResult> 
   }
   if (provider === "hapoalim") {
     return runHapoalimScrape(args);
+  }
+  if (provider === "psagot") {
+    return runPsagotScrape(args);
   }
 
   if (supportsProgrammaticTwoFactor(provider)) {
@@ -345,6 +352,76 @@ async function runHapoalimScrape(args: RunScrapeArgs): Promise<ScrapeResult> {
   return result;
 }
 
+async function runPsagotScrape(args: RunScrapeArgs): Promise<ScrapeResult> {
+  const {
+    workspaceId,
+    workspaceName,
+    credentialId,
+    provider,
+    credentials,
+    syncRunId,
+    send,
+  } = args;
+
+  if (!credentials.username || !credentials.password) {
+    return {
+      success: false,
+      accounts: [],
+      errorMessage: "User name and password are required for Psagot.",
+    };
+  }
+
+  const saveSession = (token: string | undefined) => {
+    if (token) {
+      updateCredentialField(workspaceId, credentialId, "otpLongTermToken", token);
+    }
+  };
+
+  if (credentials.otpLongTermToken) {
+    const result = await scrapePsagotWithSession(credentials.otpLongTermToken);
+    if (!result.needsOtp) {
+      saveSession(result.otpLongTermToken);
+      return result;
+    }
+  }
+
+  // Psagot sessions are short, so an expired one is normal. Scheduled syncs
+  // have nobody to type the code, so they stop here.
+  if (send === NOOP_SEND) {
+    return {
+      success: false,
+      accounts: [],
+      errorMessage:
+        "Psagot asks for an SMS code on each sign-in, so it only syncs when you run Sync now.",
+    };
+  }
+
+  const bridge = registerOtpRequest(syncRunId, workspaceId, provider);
+  const result = await scrapePsagotWithOtp({
+    username: credentials.username,
+    password: credentials.password,
+    awaitOtp: async () => {
+      send("provider-2fa-needed", {
+        workspaceId,
+        workspaceName,
+        provider,
+        syncRunId,
+      });
+      return bridge.wait();
+    },
+    onOtpSubmitted: () => {
+      send("provider-2fa-submitted", {
+        workspaceId,
+        workspaceName,
+        provider,
+        syncRunId,
+      });
+    },
+  });
+  saveSession(result.otpLongTermToken);
+  return result;
+}
+
 async function syncOneCredential(
   workspaceId: number,
   workspaceName: string,
@@ -420,9 +497,23 @@ async function syncOneCredential(
         result.investments
       );
     } catch (e) {
-      // The transactions are already saved; a portfolio problem must not
-      // turn this sync into a failure.
       console.error("[sync] could not save investments:", (e as Error).message);
+      // For a bank the transactions are already saved, so the sync still
+      // counts. For an investment-only provider the portfolio is the sync.
+      if (result.accounts.length === 0) {
+        const errorMessage = "Could not save the portfolio.";
+        failSyncRun(syncRunId, errorMessage);
+        return {
+          provider,
+          credentialId: meta.id,
+          label: meta.label,
+          ok: false,
+          added: 0,
+          updated: 0,
+          errorMessage,
+          syncRunId,
+        };
+      }
     }
   }
   completeSyncRun(syncRunId, added, updated);

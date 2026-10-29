@@ -5,6 +5,7 @@ import {
 } from "@/server/db/queries/bank-credentials";
 import { scrapeBank } from "@/server/scrapers";
 import { scrapePepperWithToken } from "@/server/scrapers/pepper";
+import { scrapePsagotWithSession } from "@/server/scrapers/psagot";
 import type { BankProvider } from "@/lib/types";
 import { getWorkspaceIdFromRequest } from "@/server/lib/workspace-context";
 
@@ -38,7 +39,25 @@ export async function POST(request: Request) {
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
   let result;
-  if (body.provider === "pepper") {
+  if (body.provider === "psagot") {
+    // Every Psagot sign-in needs an SMS code, which only the sync dialog can
+    // collect, so a test can only reuse a session a recent sync left behind.
+    const psagot = credentials.otpLongTermToken
+      ? await scrapePsagotWithSession(credentials.otpLongTermToken)
+      : null;
+    if (!psagot?.success) {
+      return NextResponse.json({
+        success: false,
+        message:
+          "Psagot verifies each sign-in with an SMS code. Save the account, then run Sync now and enter the code you receive.",
+      });
+    }
+    return NextResponse.json({
+      success: true,
+      message: "Connection successful",
+      accountsFound: psagot.investments?.length ?? 0,
+    });
+  } else if (body.provider === "pepper") {
     // Pepper can only be tested once a sync has saved its device token; the
     // first login needs an SMS code, which only the sync dialog can collect.
     if (!credentials.otpLongTermToken) {

@@ -20,6 +20,7 @@ export function useBankSync() {
         ...prev,
         [credentialId]: { syncing: true, stage: "Connecting…" },
       }));
+      let failed = false;
       const { cancel } = startSync(credentialId, (event: SyncProgressEvent) => {
         if (event.type === "provider-start") {
           setState((prev) => ({
@@ -56,11 +57,22 @@ export function useBankSync() {
               stage: s === "categorizing" ? "Categorizing…" : "Working…",
             },
           }));
+        } else if (event.type === "provider-done") {
+          if (event.data.ok === false) {
+            failed = true;
+            toast.error(
+              (event.data.errorMessage as string | undefined) ?? "Sync failed",
+              { duration: Infinity, closeButton: true }
+            );
+          }
         } else if (event.type === "complete") {
           setState((prev) => ({
             ...prev,
             [credentialId]: { syncing: false, stage: "" },
           }));
+          queryClient.invalidateQueries({ queryKey: ["integrations"] });
+          // The failure was already shown from provider-done.
+          if (failed) return;
           const data = event.data as {
             added: number;
             updated: number;

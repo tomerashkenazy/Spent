@@ -337,8 +337,8 @@ function PickerCard({
 }) {
   return (
     <div className="w-full rounded-2xl border border-border bg-card p-5 text-start shadow-sm">
-      <div className="mb-3 flex items-baseline justify-between">
-        <div className="text-[11px] font-bold tracking-tight">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="whitespace-nowrap text-[11px] font-bold tracking-tight">
           Supported providers · {total}
         </div>
         <FilterPills value={filter} onChange={onFilter} />
@@ -407,16 +407,28 @@ function PickerCard({
   );
 }
 
+const KIND_TAG: Record<BankKind, { label: string; cls: string }> = {
+  bank: {
+    label: "Bank",
+    cls: "bg-[color-mix(in_oklch,var(--primary)_12%,transparent)] text-[color-mix(in_oklch,var(--primary)_70%,black)]",
+  },
+  card: {
+    label: "Card",
+    cls: "bg-[color-mix(in_oklch,var(--status-heads-up)_18%,transparent)] text-[color-mix(in_oklch,var(--status-heads-up)_60%,black)]",
+  },
+  investment: {
+    label: "Investments",
+    cls: "bg-muted text-foreground/75",
+  },
+};
+
 function KindTag({ kind }: { kind: BankKind }) {
-  const cls =
-    kind === "bank"
-      ? "bg-[color-mix(in_oklch,var(--primary)_12%,transparent)] text-[color-mix(in_oklch,var(--primary)_70%,black)]"
-      : "bg-[color-mix(in_oklch,var(--status-heads-up)_18%,transparent)] text-[color-mix(in_oklch,var(--status-heads-up)_60%,black)]";
+  const { label, cls } = KIND_TAG[kind];
   return (
     <span
       className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${cls}`}
     >
-      {kind === "bank" ? "Bank" : "Card"}
+      {label}
     </span>
   );
 }
@@ -432,6 +444,7 @@ function FilterPills({
     { id: "all", label: "All" },
     { id: "bank", label: "Banks" },
     { id: "card", label: "Cards" },
+    { id: "investment", label: "Investments" },
   ];
   return (
     <div className="flex gap-0.5 rounded-full border border-border bg-background p-0.5">
@@ -592,7 +605,11 @@ function CredentialForm({
             {info.name}
           </div>
           <div className="mt-1 text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-            {info.kind === "bank" ? "Bank" : "Credit cards"}
+            {info.kind === "bank"
+              ? "Bank"
+              : info.kind === "card"
+                ? "Credit cards"
+                : "Investments"}
           </div>
         </div>
         <button

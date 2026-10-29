@@ -15,7 +15,10 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ProviderBadge } from "@/components/setup/provider-badge";
@@ -26,7 +29,16 @@ import { listIntegrations } from "@/lib/api";
 import { BANK_PROVIDERS } from "@/lib/types";
 import { translateProviderName, useFormatterLabels } from "@/lib/i18n-data";
 import { formatLastSync } from "@/lib/formatters";
-import type { Integration } from "@/lib/types";
+import type { BankKind, Integration } from "@/lib/types";
+
+const ADD_GROUPS: {
+  kind: BankKind;
+  labelKey: "addGroupBank" | "addGroupCard" | "addGroupInvestment";
+}[] = [
+  { kind: "bank", labelKey: "addGroupBank" },
+  { kind: "card", labelKey: "addGroupCard" },
+  { kind: "investment", labelKey: "addGroupInvestment" },
+];
 
 interface SheetState {
   open: boolean;
@@ -61,6 +73,12 @@ export default function BankSettingsPage() {
   }, [integrations]);
 
   const availableToAdd = BANK_PROVIDERS.filter((b) => b.enabled);
+  // Grouped by kind so the investment providers at the end of the list
+  // are easy to find instead of hiding below the fold.
+  const addGroups = ADD_GROUPS.map((group) => ({
+    ...group,
+    providers: availableToAdd.filter((b) => b.kind === group.kind),
+  })).filter((group) => group.providers.length > 0);
 
   const handleSyncAll = () => {
     integrations.forEach((i) => start(i.id));
@@ -113,26 +131,32 @@ export default function BankSettingsPage() {
                   }
                 />
                 <DropdownMenuContent align="end" className="w-56">
-                  {availableToAdd.map((b) => (
-                    <DropdownMenuItem
-                      key={b.id}
-                      onClick={() =>
-                        setSheet({
-                          open: true,
-                          mode: "add",
-                          providerId: b.id,
-                          credentialId: null,
-                        })
-                      }
-                    >
-                      <span className="flex items-center gap-2">
-                        <span
-                          className="h-2 w-2 rounded-full"
-                          style={{ background: b.color }}
-                        />
-                        {translateProviderName(b.id, b.name, tBanks)}
-                      </span>
-                    </DropdownMenuItem>
+                  {addGroups.map((group, index) => (
+                    <DropdownMenuGroup key={group.kind}>
+                      {index > 0 ? <DropdownMenuSeparator /> : null}
+                      <DropdownMenuLabel>{t(group.labelKey)}</DropdownMenuLabel>
+                      {group.providers.map((b) => (
+                        <DropdownMenuItem
+                          key={b.id}
+                          onClick={() =>
+                            setSheet({
+                              open: true,
+                              mode: "add",
+                              providerId: b.id,
+                              credentialId: null,
+                            })
+                          }
+                        >
+                          <span className="flex items-center gap-2">
+                            <span
+                              className="h-2 w-2 rounded-full"
+                              style={{ background: b.color }}
+                            />
+                            {translateProviderName(b.id, b.name, tBanks)}
+                          </span>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuGroup>
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -163,14 +187,22 @@ export default function BankSettingsPage() {
                     providerId: integration.provider,
                     credentialId: integration.id,
                   });
-                const subline = integration.lastSyncAt
-                  ? t("transactionsCountWithSync", {
-                      count: integration.transactionCount,
-                      time: formatLastSync(integration.lastSyncAt, labels),
-                    })
-                  : t("transactionsCountNever", {
-                      count: integration.transactionCount,
-                    });
+                const syncedAgo = integration.lastSyncAt
+                  ? formatLastSync(integration.lastSyncAt, labels)
+                  : null;
+                const subline =
+                  info.kind === "investment"
+                    ? syncedAgo
+                      ? t("portfolioWithSync", { time: syncedAgo })
+                      : t("portfolioNever")
+                    : syncedAgo
+                      ? t("transactionsCountWithSync", {
+                          count: integration.transactionCount,
+                          time: syncedAgo,
+                        })
+                      : t("transactionsCountNever", {
+                          count: integration.transactionCount,
+                        });
                 return (
                   <li
                     key={integration.id}

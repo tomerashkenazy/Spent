@@ -370,7 +370,8 @@ export type BankProvider =
   | "beyahadBishvilha"
   | "behatsdaa"
   | "oneZero"
-  | "pepper";
+  | "pepper"
+  | "psagot";
 
 export interface CredentialField {
   key: string;
@@ -383,7 +384,8 @@ export interface CredentialField {
   numeric?: boolean;
 }
 
-export type BankKind = "bank" | "card";
+/** "investment" providers return portfolios only, no transactions. */
+export type BankKind = "bank" | "card" | "investment";
 
 export interface BankProviderInfo {
   id: BankProvider;
@@ -397,11 +399,13 @@ export interface BankProviderInfo {
   enabled: boolean;
   /**
    * True when the underlying scraper supports OTP-driven login flows that we
-   * can drive in-process (OneZero, Pepper, Hapoalim). Leumi/etc. expose
+   * can drive in-process (OneZero, Pepper, Hapoalim, Psagot). Leumi/etc. expose
    * the methods on the base interface but no concrete implementation, so 2FA
    * on those banks falls back to the manual (showBrowser) path.
    */
   supportsProgrammaticTwoFactor?: boolean;
+  /** Replaces the default "SMS once, then a saved token" 2FA explanation. */
+  twoFactorNote?: string;
 }
 
 export interface OllamaModelInfo {
@@ -810,6 +814,27 @@ export const BANK_PROVIDERS: BankProviderInfo[] = [
     ],
     enabled: true,
     supportsProgrammaticTwoFactor: true,
+  },
+  {
+    id: "psagot",
+    name: "Psagot",
+    kind: "investment",
+    color: "#2B2A7A",
+    blurb: "Trading account portfolio",
+    domain: "psagot.co.il",
+    credentialFields: [
+      {
+        key: "username",
+        label: "User name",
+        type: "text",
+        hint: "The user name you sign in to Psagot Trade with.",
+      },
+      { key: "password", label: "Password", type: "password" },
+    ],
+    enabled: true,
+    supportsProgrammaticTwoFactor: true,
+    twoFactorNote:
+      "Psagot texts a code every time you sign in. Spent keeps the session while Psagot allows it, so a sync soon after another one skips the code. Otherwise enter the code in the sync window.",
   },
 ];
 

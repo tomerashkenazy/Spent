@@ -98,9 +98,13 @@ function SheetBody({
             <SheetTitle>{connected?.label ?? info.name}</SheetTitle>
             <SheetDescription className="mt-0.5">
               {mode === "add"
-                ? "Connect this bank to sync transactions."
+                ? info.kind === "investment"
+                  ? "Connect this account to track its portfolio."
+                  : "Connect this bank to sync transactions."
                 : connected
-                  ? `${info.name} · ${connected.transactionCount} transactions`
+                  ? info.kind === "investment"
+                    ? `${info.name} · Investment portfolio`
+                    : `${info.name} · ${connected.transactionCount} transactions`
                   : info.blurb}
             </SheetDescription>
           </div>

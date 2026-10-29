@@ -74,7 +74,7 @@
     "feeOnDeposits": "Fee on deposits",
     "feeOnBalance": "Fee on balance",
     "emptyTitle": "No investments yet",
-    "emptyBody": "Securities portfolios at Bank Hapoalim and Bank Leumi are read with your existing bank login. Run a sync and they show up here.",
+    "emptyBody": "Securities portfolios at Bank Hapoalim and Bank Leumi are read with your existing bank login. Psagot can be added as its own connection. Run a sync and they show up here.",
     "emptyAction": "Manage connections"
   },
   "home": {
@@ -393,10 +393,15 @@
       "syncAll": "Sync all",
       "syncing": "Syncing…",
       "addBank": "Add bank",
+      "addGroupBank": "Banks",
+      "addGroupCard": "Credit cards",
+      "addGroupInvestment": "Investments",
       "noneConnectedPrompt": "No banks connected yet. Click <addBankBold>Add bank</addBankBold> to connect one.",
       "transactionsCount": "{count} transactions",
       "transactionsCountWithSync": "{count} transactions · last sync {time}",
       "transactionsCountNever": "{count} transactions · never synced",
+      "portfolioWithSync": "Investment portfolio · last sync {time}",
+      "portfolioNever": "Investment portfolio · never synced",
       "openDetails": "Open {name} details",
       "statusSyncing": "Syncing",
       "statusNeverSynced": "Never synced",
@@ -749,6 +754,10 @@
     "pepper": {
       "name": "Pepper",
       "blurb": "SMS code once, then automatic"
+    },
+    "psagot": {
+      "name": "Psagot",
+      "blurb": "Trading account portfolio"
     },
     "fields": {
       "id": {

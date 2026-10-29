@@ -74,7 +74,7 @@
     "feeOnDeposits": "דמי ניהול מהפקדה",
     "feeOnBalance": "דמי ניהול מצבירה",
     "emptyTitle": "אין עדיין השקעות",
-    "emptyBody": "תיקי ניירות ערך בבנק הפועלים ובבנק לאומי נקראים עם פרטי הכניסה הקיימים לבנק. הריצו סנכרון והם יופיעו כאן.",
+    "emptyBody": "תיקי ניירות ערך בבנק הפועלים ובבנק לאומי נקראים עם פרטי הכניסה הקיימים לבנק. את פסגות אפשר להוסיף כחיבור נפרד. הריצו סנכרון והם יופיעו כאן.",
     "emptyAction": "ניהול חיבורים"
   },
   "home": {
@@ -393,10 +393,15 @@
       "syncAll": "סנכרון של הכל",
       "syncing": "מסנכרן…",
       "addBank": "הוספת בנק",
+      "addGroupBank": "בנקים",
+      "addGroupCard": "כרטיסי אשראי",
+      "addGroupInvestment": "השקעות",
       "noneConnectedPrompt": "עדיין לא חוברו בנקים. לחצו על <addBankBold>הוספת בנק</addBankBold> כדי לחבר אחד.",
       "transactionsCount": "{count} תנועות",
       "transactionsCountWithSync": "{count} תנועות · סנכרון אחרון {time}",
       "transactionsCountNever": "{count} תנועות · לא סונכרן",
+      "portfolioWithSync": "תיק השקעות · סנכרון אחרון {time}",
+      "portfolioNever": "תיק השקעות · לא סונכרן",
       "openDetails": "פתיחת פרטי {name}",
       "statusSyncing": "מסנכרן",
       "statusNeverSynced": "לא סונכרן",
@@ -749,6 +754,10 @@
     "pepper": {
       "name": "פפר",
       "blurb": "קוד SMS פעם אחת, ואחר כך אוטומטי"
+    },
+    "psagot": {
+      "name": "פסגות",
+      "blurb": "תיק ניירות ערך בחשבון המסחר"
     },
     "fields": {
       "id": {

@@ -15,7 +15,7 @@ interface TwoFactorSectionProps {
   resetPending?: boolean;
   /**
    * When true, render the "Reset 2FA" button. Only meaningful for
-   * programmatic-2FA banks (OneZero, Pepper).
+   * programmatic-2FA banks (OneZero, Pepper, Psagot).
    */
   showResetButton?: boolean;
 }
@@ -38,7 +38,9 @@ export function TwoFactorSection({
         Two-factor authentication
       </div>
 
-      {supportsProgrammatic ? (
+      {info.twoFactorNote ? (
+        <p className="text-xs text-muted-foreground">{info.twoFactorNote}</p>
+      ) : supportsProgrammatic ? (
         <p className="text-xs text-muted-foreground">
           {info.name} sends a one-time SMS code on first sync. Spent will save a
           long-term token so future syncs don&apos;t need a fresh code.
