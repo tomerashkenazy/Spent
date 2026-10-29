@@ -180,7 +180,7 @@ function AIForm({ settings }: { settings: AppSettings }) {
                   {RECOMMENDED_OLLAMA_MODELS.map((m) => (
                     <SelectItem key={m.name} value={m.name}>
                       <div className="flex items-center gap-2">
-                        <span>{m.name}</span>
+                        <span>{m.label ?? m.name}</span>
                         <span className="text-xs text-muted-foreground">
                           {m.sizeGb} GB
                         </span>

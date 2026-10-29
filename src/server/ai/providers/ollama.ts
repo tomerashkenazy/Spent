@@ -9,6 +9,28 @@ import type {
 } from "../types";
 import { buildCategorizationPrompt, SYSTEM_PROMPT } from "../prompts";
 
+// parseResponse picks the first JSON array out of the reply, so wrapping the
+// array in an object (Ollama structured outputs need an object root) is fine.
+const RESPONSE_SCHEMA = {
+  type: "object",
+  properties: {
+    results: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          index: { type: "integer" },
+          categoryName: { type: "string" },
+          confidence: { type: "integer" },
+          isNew: { type: "boolean" },
+        },
+        required: ["index", "categoryName", "confidence"],
+      },
+    },
+  },
+  required: ["results"],
+};
+
 function parseConfidence(raw: unknown): number | undefined {
   const n = typeof raw === "number" ? raw : Number(raw);
   if (!Number.isFinite(n)) return undefined;
@@ -47,7 +69,14 @@ export class OllamaProvider implements AIProvider {
           { role: "user", content: prompt },
         ],
         stream: false,
-        format: "json",
+        // A schema instead of plain "json": small models in JSON mode can
+        // emit whitespace forever and only stop at Ollama's 5 minute limit,
+        // blocking every request queued behind them.
+        format: RESPONSE_SCHEMA,
+        options: {
+          temperature: 0,
+          num_predict: Math.max(1024, transactions.length * 60),
+        },
       }),
     });
 

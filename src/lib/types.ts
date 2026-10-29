@@ -345,6 +345,8 @@ export interface BankProviderInfo {
 
 export interface OllamaModelInfo {
   name: string;
+  /** Display name, for models whose pullable name is a long hf.co path. */
+  label?: string;
   sizeGb: number;
   description: string;
   recommended?: boolean;
@@ -371,6 +373,12 @@ export const RECOMMENDED_OLLAMA_MODELS: OllamaModelInfo[] = [
     name: "qwen2.5:3b",
     sizeGb: 1.9,
     description: "Alternative 3B model from Alibaba.",
+  },
+  {
+    name: "hf.co/dicta-il/DictaLM-3.0-Nemotron-12B-Instruct-GGUF:Q4_K_M",
+    label: "DictaLM 3.0 12B",
+    sizeGb: 7.5,
+    description: "Hebrew-first model from Dicta. Best for Hebrew merchant names, slower.",
   },
 ];
 

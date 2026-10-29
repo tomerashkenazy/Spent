@@ -758,7 +758,8 @@
     "llama3_2_3b": "Recommended. Fast and accurate enough for categorizing.",
     "llama3_2_1b": "Smallest and fastest. Slightly less accurate.",
     "llama3_1_8b": "Higher quality, slower, larger download.",
-    "qwen2_5_3b": "Alternative 3B model from Alibaba."
+    "qwen2_5_3b": "Alternative 3B model from Alibaba.",
+    "hf_co_dicta_il_DictaLM_3_0_Nemotron_12B_Instruct_GGUF_Q4_K_M": "Hebrew-first model from Dicta. Best for Hebrew merchant names, slower."
   },
   "formatters": {
     "neverSynced": "Never synced",

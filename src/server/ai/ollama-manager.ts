@@ -1,6 +1,9 @@
 import "server-only";
 
 import { spawn, type ChildProcess } from "child_process";
+import { existsSync } from "fs";
+import { homedir } from "os";
+import { join } from "path";
 
 declare global {
   var _ollamaProcess: ChildProcess | undefined;
@@ -111,6 +114,20 @@ export async function* pullOllamaModel(
   }
 }
 
+// A background service (launchd) does not get the shell's PATH, and the macOS
+// app only links the `ollama` CLI after its first launch, so also look in the
+// usual install locations.
+const OLLAMA_BINARY_CANDIDATES = [
+  "/Applications/Ollama.app/Contents/Resources/ollama",
+  join(homedir(), "Applications/Ollama.app/Contents/Resources/ollama"),
+  "/opt/homebrew/bin/ollama",
+  "/usr/local/bin/ollama",
+];
+
+function resolveOllamaBinary(): string {
+  return OLLAMA_BINARY_CANDIDATES.find((p) => existsSync(p)) ?? "ollama";
+}
+
 export async function ensureOllamaRunning(
   url: string
 ): Promise<OllamaCheckResult> {
@@ -127,7 +144,7 @@ export async function ensureOllamaRunning(
   console.log("[ollama] not reachable, attempting to spawn 'ollama serve'");
 
   try {
-    const proc = spawn("ollama", ["serve"], {
+    const proc = spawn(resolveOllamaBinary(), ["serve"], {
       detached: false,
       stdio: ["ignore", "pipe", "pipe"],
     });
