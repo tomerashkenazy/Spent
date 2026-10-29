@@ -33,6 +33,10 @@ import {
   scrapeOneZeroFirstTime,
   scrapeOneZeroWithToken,
 } from "@/server/scrapers/one-zero";
+import {
+  scrapePepperFirstTime,
+  scrapePepperWithToken,
+} from "@/server/scrapers/pepper";
 import { createAIProvider } from "@/server/ai/factory";
 import { ensureOllamaRunning } from "@/server/ai/ollama-manager";
 import { toLocalISODate } from "@/server/lib/date-utils";
@@ -54,6 +58,8 @@ export type SyncEventSender = (
   event: string,
   data: Record<string, unknown>
 ) => void;
+
+const NOOP_SEND: SyncEventSender = () => {};
 
 export interface ProviderResult {
   provider: BankProvider;
@@ -120,6 +126,13 @@ async function runScrapeForProvider(args: RunScrapeArgs): Promise<ScrapeResult> 
     manualTwoFactor,
     send,
   } = args;
+
+  if (provider === "pepper") {
+    return runPepperScrape(args);
+  }
+  if (provider === "hapoalim") {
+    return runHapoalimScrape(args);
+  }
 
   if (supportsProgrammaticTwoFactor(provider)) {
     const existingToken = credentials.otpLongTermToken;
@@ -197,6 +210,136 @@ async function runScrapeForProvider(args: RunScrapeArgs): Promise<ScrapeResult> 
   return scrapeBank(workspaceId, provider, credentials, startDate, {
     manualTwoFactor,
   });
+}
+
+async function runPepperScrape(args: RunScrapeArgs): Promise<ScrapeResult> {
+  const {
+    workspaceId,
+    workspaceName,
+    credentialId,
+    provider,
+    credentials,
+    startDate,
+    syncRunId,
+    send,
+  } = args;
+
+  if (!credentials.phoneNumber || !credentials.password) {
+    return {
+      success: false,
+      accounts: [],
+      errorMessage: "Phone number and password are required for Pepper.",
+    };
+  }
+
+  const saveToken = (token: string | undefined) => {
+    if (token) {
+      updateCredentialField(workspaceId, credentialId, "otpLongTermToken", token);
+    }
+  };
+
+  // The token embeds a short-lived JWT that gets refreshed on login, so it is
+  // saved after every sync, not only after the first one.
+  if (credentials.otpLongTermToken) {
+    const result = await scrapePepperWithToken({
+      phoneNumber: credentials.phoneNumber,
+      password: credentials.password,
+      otpLongTermToken: credentials.otpLongTermToken,
+      startDate,
+    });
+    saveToken(result.otpLongTermToken);
+    if (result.needsOtp) {
+      // Don't fall back to SMS here: scheduled syncs have nobody to type it.
+      return {
+        ...result,
+        errorMessage:
+          "Pepper needs a new SMS verification. Open Settings, reset the 2FA token for this account, and sync again.",
+      };
+    }
+    return result;
+  }
+
+  const bridge = registerOtpRequest(syncRunId, workspaceId, provider);
+  const result = await scrapePepperFirstTime({
+    phoneNumber: credentials.phoneNumber,
+    password: credentials.password,
+    startDate,
+    awaitOtp: async () => {
+      send("provider-2fa-needed", {
+        workspaceId,
+        workspaceName,
+        provider,
+        syncRunId,
+      });
+      return bridge.wait();
+    },
+    onOtpSubmitted: () => {
+      send("provider-2fa-submitted", {
+        workspaceId,
+        workspaceName,
+        provider,
+        syncRunId,
+      });
+    },
+  });
+  saveToken(result.otpLongTermToken);
+  return result;
+}
+
+async function runHapoalimScrape(args: RunScrapeArgs): Promise<ScrapeResult> {
+  const {
+    workspaceId,
+    workspaceName,
+    credentialId,
+    provider,
+    credentials,
+    startDate,
+    syncRunId,
+    manualTwoFactor,
+    send,
+  } = args;
+
+  // Scheduled syncs have no dialog to type a code into; fail fast instead.
+  const interactive = send !== NOOP_SEND;
+
+  const result = await scrapeBank(workspaceId, provider, credentials, startDate, {
+    manualTwoFactor,
+    hapoalim: {
+      // The device trust (cookies + localStorage) reuses the token slot so the
+      // existing "Reset 2FA" button and credential plumbing apply to it.
+      deviceTrust: credentials.otpLongTermToken,
+      awaitOtp: interactive
+        ? async () => {
+            // A fresh bridge per attempt: a bridge resolves only once.
+            const bridge = registerOtpRequest(syncRunId, workspaceId, provider);
+            send("provider-2fa-needed", {
+              workspaceId,
+              workspaceName,
+              provider,
+              syncRunId,
+            });
+            const code = await bridge.wait();
+            send("provider-2fa-submitted", {
+              workspaceId,
+              workspaceName,
+              provider,
+              syncRunId,
+            });
+            return code;
+          }
+        : undefined,
+    },
+  });
+
+  if (result.deviceTrust) {
+    updateCredentialField(
+      workspaceId,
+      credentialId,
+      "otpLongTermToken",
+      result.deviceTrust
+    );
+  }
+  return result;
 }
 
 async function syncOneCredential(
@@ -560,7 +703,6 @@ export async function syncWorkspace(
   };
 }
 
-const NOOP_SEND: SyncEventSender = () => {};
 
 export async function runAllWorkspaces(
   filterCredentialId?: number,

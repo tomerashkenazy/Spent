@@ -15,7 +15,7 @@ interface TwoFactorSectionProps {
   resetPending?: boolean;
   /**
    * When true, render the "Reset 2FA" button. Only meaningful for
-   * programmatic-2FA banks (OneZero today).
+   * programmatic-2FA banks (OneZero, Pepper).
    */
   showResetButton?: boolean;
 }

@@ -707,6 +707,10 @@
       "name": "One Zero",
       "blurb": "Programmatic 2FA via SMS code"
     },
+    "pepper": {
+      "name": "Pepper",
+      "blurb": "SMS code once, then automatic"
+    },
     "fields": {
       "id": {
         "label": "ID Number",

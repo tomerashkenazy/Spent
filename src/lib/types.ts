@@ -309,7 +309,8 @@ export type BankProvider =
   | "massad"
   | "beyahadBishvilha"
   | "behatsdaa"
-  | "oneZero";
+  | "oneZero"
+  | "pepper";
 
 export interface CredentialField {
   key: string;
@@ -336,7 +337,7 @@ export interface BankProviderInfo {
   enabled: boolean;
   /**
    * True when the underlying scraper supports OTP-driven login flows that we
-   * can drive in-process. Currently only OneZero — Hapoalim/Leumi/etc. expose
+   * can drive in-process (OneZero, Pepper, Hapoalim). Leumi/etc. expose
    * the methods on the base interface but no concrete implementation, so 2FA
    * on those banks falls back to the manual (showBrowser) path.
    */
@@ -457,6 +458,7 @@ export const BANK_PROVIDERS: BankProviderInfo[] = [
       { key: "password", label: "Password", type: "password" },
     ],
     enabled: true,
+    supportsProgrammaticTwoFactor: true,
   },
   {
     id: "leumi",
@@ -719,6 +721,31 @@ export const BANK_PROVIDERS: BankProviderInfo[] = [
         type: "tel",
         placeholder: "+972501234567",
         hint: "Where the SMS one-time code will be sent. International format including the country code.",
+      },
+    ],
+    enabled: true,
+    supportsProgrammaticTwoFactor: true,
+  },
+  {
+    id: "pepper",
+    name: "Pepper",
+    kind: "bank",
+    color: "#E6007E",
+    blurb: "SMS code once, then automatic",
+    domain: "pepper.co.il",
+    credentialFields: [
+      {
+        key: "phoneNumber",
+        label: "Phone number",
+        type: "tel",
+        placeholder: "0501234567",
+        hint: "The mobile number you sign in to Pepper with. A one-time SMS code is sent to it on the first sync.",
+      },
+      {
+        key: "password",
+        label: "Password",
+        type: "password",
+        placeholder: "Your Pepper password",
       },
     ],
     enabled: true,

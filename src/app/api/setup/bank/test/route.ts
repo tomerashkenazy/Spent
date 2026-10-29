@@ -4,6 +4,7 @@ import {
   getRequiresManualTwoFactor,
 } from "@/server/db/queries/bank-credentials";
 import { scrapeBank } from "@/server/scrapers";
+import { scrapePepperWithToken } from "@/server/scrapers/pepper";
 import type { BankProvider } from "@/lib/types";
 import { getWorkspaceIdFromRequest } from "@/server/lib/workspace-context";
 
@@ -36,13 +37,35 @@ export async function POST(request: Request) {
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-  const result = await scrapeBank(
-    workspaceId,
-    body.provider as BankProvider,
-    credentials,
-    sevenDaysAgo,
-    { manualTwoFactor }
-  );
+  let result;
+  if (body.provider === "pepper") {
+    // Pepper can only be tested once a sync has saved its device token; the
+    // first login needs an SMS code, which only the sync dialog can collect.
+    if (!credentials.otpLongTermToken) {
+      return NextResponse.json({
+        success: false,
+        message:
+          "Pepper verifies new connections with an SMS code. Save the account, then run Sync now and enter the code you receive.",
+      });
+    }
+    result = await scrapePepperWithToken({
+      phoneNumber: credentials.phoneNumber,
+      password: credentials.password,
+      otpLongTermToken: credentials.otpLongTermToken,
+      startDate: sevenDaysAgo,
+    });
+  } else {
+    result = await scrapeBank(
+      workspaceId,
+      body.provider as BankProvider,
+      credentials,
+      sevenDaysAgo,
+      {
+        manualTwoFactor,
+        hapoalim: { deviceTrust: credentials.otpLongTermToken },
+      }
+    );
+  }
 
   if (!result.success) {
     return NextResponse.json({

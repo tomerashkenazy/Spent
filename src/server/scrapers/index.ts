@@ -4,6 +4,12 @@ import { CompanyTypes, createScraper } from "israeli-bank-scrapers";
 import type { ScrapeResult, ScrapedTransaction } from "./types";
 import type { BankProvider } from "@/lib/types";
 import { getWorkspaceSetting } from "../db/queries/settings";
+import { HapoalimOtpScraper, type HapoalimOtpHooks } from "./hapoalim-otp";
+
+export interface BankScrapeResult extends ScrapeResult {
+  /** Hapoalim device trust captured after a successful scrape. */
+  deviceTrust?: string;
+}
 
 export const PROVIDER_MAP: Record<string, CompanyTypes> = {
   isracard: CompanyTypes.isracard,
@@ -132,8 +138,9 @@ async function runScrape(
   provider: BankProvider,
   credentials: Record<string, string>,
   startDate: Date,
-  showBrowser: boolean
-): Promise<ScrapeResult> {
+  showBrowser: boolean,
+  hapoalimHooks: HapoalimOtpHooks
+): Promise<BankScrapeResult> {
   const companyId = PROVIDER_MAP[provider];
   if (!companyId) {
     return {
@@ -154,7 +161,7 @@ async function runScrape(
     chromiumArgs.push("--no-sandbox");
   }
 
-  const scraper = createScraper({
+  const scraperOptions = {
     companyId,
     startDate,
     combineInstallments: false,
@@ -164,7 +171,13 @@ async function runScrape(
     verbose: showBrowser,
     timeout: 60000,
     args: chromiumArgs,
-  });
+  };
+  // Hapoalim gets a subclass that handles the bank's SMS device check.
+  const hapoalimScraper =
+    provider === "hapoalim"
+      ? new HapoalimOtpScraper(scraperOptions, hapoalimHooks)
+      : null;
+  const scraper = hapoalimScraper ?? createScraper(scraperOptions);
 
   // credentials shape varies by provider; the library accepts different types per bank
   const result = await scraper.scrape(
@@ -174,6 +187,9 @@ async function runScrape(
   if (!result.success) {
     const errorType = result.errorType ?? "GENERIC";
     console.error(`[scraper] failed (${errorType}):`, result.errorMessage);
+    if (hapoalimScraper?.otpRequiredButUnavailable && result.errorMessage) {
+      return { success: false, accounts: [], errorMessage: result.errorMessage };
+    }
     const friendly = FRIENDLY_ERRORS[errorType];
     const detail = result.errorMessage
       ? sanitizeError(new Error(result.errorMessage))
@@ -217,7 +233,11 @@ async function runScrape(
     ),
   }));
 
-  return { success: true, accounts };
+  return {
+    success: true,
+    accounts,
+    deviceTrust: hapoalimScraper?.capturedDeviceTrust,
+  };
 }
 
 interface ScrapeBankOptions {
@@ -227,6 +247,8 @@ interface ScrapeBankOptions {
    * popup for just that one provider.
    */
   manualTwoFactor?: boolean;
+  /** SMS code + saved device trust for Bank Hapoalim. */
+  hapoalim?: HapoalimOtpHooks;
 }
 
 export async function scrapeBank(
@@ -235,7 +257,7 @@ export async function scrapeBank(
   credentials: Record<string, string>,
   startDate: Date,
   options: ScrapeBankOptions = {}
-): Promise<ScrapeResult> {
+): Promise<BankScrapeResult> {
   const workspaceShowBrowser =
     getWorkspaceSetting(workspaceId, "scraper_show_browser") === "true";
   const showBrowser = options.manualTwoFactor === true || workspaceShowBrowser;
@@ -247,7 +269,13 @@ export async function scrapeBank(
       console.log(
         `[scraper] starting scrape for ${provider} from ${startDate.toISOString()} (attempt ${attempt}/${MAX_ATTEMPTS}, showBrowser=${showBrowser})`
       );
-      return await runScrape(provider, credentials, startDate, showBrowser);
+      return await runScrape(
+        provider,
+        credentials,
+        startDate,
+        showBrowser,
+        options.hapoalim ?? {}
+      );
     } catch (error) {
       lastError = error;
       console.error(
