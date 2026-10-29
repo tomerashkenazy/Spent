@@ -239,6 +239,66 @@ export interface HomePayload {
   errors: HomeSectionError[];
 }
 
+export type InvestmentKind =
+  | "brokerage"
+  | "pension"
+  | "gemel"
+  | "hishtalmut"
+  | "gemel_lehashkaa";
+
+/** Brokerage accounts are liquid; everything else is long-term savings. */
+export function isLongTermInvestment(kind: InvestmentKind): boolean {
+  return kind !== "brokerage";
+}
+
+export interface InvestmentHolding {
+  symbol: string | null;
+  name: string;
+  quantity: number | null;
+  price: number | null;
+  value: number;
+  currency: string;
+  changePct: number | null;
+  profitLoss: number | null;
+}
+
+export interface InvestmentAccount {
+  id: number;
+  credentialId: number;
+  credentialLabel: string;
+  provider: string;
+  externalId: string;
+  kind: InvestmentKind;
+  name: string;
+  currency: string;
+  asOf: string;
+  totalValue: number;
+  cashValue: number | null;
+  /** Total of the previous snapshot, for the change since the last sync. */
+  previousValue: number | null;
+  previousAsOf: string | null;
+  monthlyDeposit: number | null;
+  ytdReturnPct: number | null;
+  mgmtFeeDepositPct: number | null;
+  mgmtFeeBalancePct: number | null;
+  holdings: InvestmentHolding[];
+}
+
+export interface InvestmentHistoryPoint {
+  date: string;
+  brokerage: number;
+  longTerm: number;
+  total: number;
+}
+
+export type InvestmentsSection = "accounts" | "history";
+
+export interface InvestmentsPayload {
+  accounts: InvestmentAccount[] | null;
+  history: InvestmentHistoryPoint[] | null;
+  errors: { section: InvestmentsSection; message: string }[];
+}
+
 export type SyncKind = "manual" | "scheduled";
 
 export interface ActivitySnapshot {
@@ -451,7 +511,7 @@ export const BANK_PROVIDERS: BankProviderInfo[] = [
     name: "Bank Hapoalim",
     kind: "bank",
     color: "#E2231A",
-    blurb: "Includes Poalim wallets",
+    blurb: "Includes Poalim wallets and securities",
     domain: "bankhapoalim.co.il",
     credentialFields: [
       { key: "userCode", label: "User Code", type: "text" },
@@ -465,7 +525,7 @@ export const BANK_PROVIDERS: BankProviderInfo[] = [
     name: "Bank Leumi",
     kind: "bank",
     color: "#1976A4",
-    blurb: "Personal & business accounts",
+    blurb: "Personal & business accounts, plus securities",
     domain: "leumi.co.il",
     credentialFields: [
       { key: "username", label: "Username", type: "text" },

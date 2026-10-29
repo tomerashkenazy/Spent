@@ -11,6 +11,7 @@ import type {
   Workspace,
   HomePayload,
   ActivitySnapshot,
+  InvestmentsPayload,
 } from "./types";
 import { getActiveWorkspaceIdSync } from "./workspace-store";
 
@@ -284,6 +285,10 @@ export function getSummary(params: {
 
 export function getHome() {
   return fetchJSON<HomePayload>(`/api/home`);
+}
+
+export function getInvestments() {
+  return fetchJSON<InvestmentsPayload>(`/api/investments`);
 }
 
 export function getActivity() {

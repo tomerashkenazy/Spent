@@ -5,6 +5,7 @@ import type { ScrapeResult, ScrapedTransaction } from "./types";
 import type { BankProvider } from "@/lib/types";
 import { getWorkspaceSetting } from "../db/queries/settings";
 import { HapoalimOtpScraper, type HapoalimOtpHooks } from "./hapoalim-otp";
+import { LeumiInvestmentsScraper } from "./investments/leumi-securities";
 
 export interface BankScrapeResult extends ScrapeResult {
   /** Hapoalim device trust captured after a successful scrape. */
@@ -139,7 +140,8 @@ async function runScrape(
   credentials: Record<string, string>,
   startDate: Date,
   showBrowser: boolean,
-  hapoalimHooks: HapoalimOtpHooks
+  hapoalimHooks: HapoalimOtpHooks,
+  fetchInvestments: boolean
 ): Promise<BankScrapeResult> {
   const companyId = PROVIDER_MAP[provider];
   if (!companyId) {
@@ -175,9 +177,17 @@ async function runScrape(
   // Hapoalim gets a subclass that handles the bank's SMS device check.
   const hapoalimScraper =
     provider === "hapoalim"
-      ? new HapoalimOtpScraper(scraperOptions, hapoalimHooks)
+      ? new HapoalimOtpScraper(scraperOptions, {
+          ...hapoalimHooks,
+          fetchSecurities: fetchInvestments,
+        })
       : null;
-  const scraper = hapoalimScraper ?? createScraper(scraperOptions);
+  const leumiScraper =
+    provider === "leumi" && fetchInvestments
+      ? new LeumiInvestmentsScraper(scraperOptions)
+      : null;
+  const scraper =
+    hapoalimScraper ?? leumiScraper ?? createScraper(scraperOptions);
 
   // credentials shape varies by provider; the library accepts different types per bank
   const result = await scraper.scrape(
@@ -236,6 +246,8 @@ async function runScrape(
   return {
     success: true,
     accounts,
+    investments:
+      hapoalimScraper?.capturedInvestments ?? leumiScraper?.capturedInvestments,
     deviceTrust: hapoalimScraper?.capturedDeviceTrust,
   };
 }
@@ -249,6 +261,8 @@ interface ScrapeBankOptions {
   manualTwoFactor?: boolean;
   /** SMS code + saved device trust for Bank Hapoalim. */
   hapoalim?: HapoalimOtpHooks;
+  /** Also read securities portfolios (Hapoalim, Leumi). Off for connection tests. */
+  fetchInvestments?: boolean;
 }
 
 export async function scrapeBank(
@@ -274,7 +288,8 @@ export async function scrapeBank(
         credentials,
         startDate,
         showBrowser,
-        options.hapoalim ?? {}
+        options.hapoalim ?? {},
+        options.fetchInvestments === true
       );
     } catch (error) {
       lastError = error;

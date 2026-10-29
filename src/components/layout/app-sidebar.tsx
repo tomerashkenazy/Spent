@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Wallet,
   ArrowLeftRight,
+  TrendingUp,
   Settings as SettingsIcon,
   Star,
 } from "lucide-react";
@@ -49,6 +50,12 @@ const NAV: NavDef[] = [
     labelKey: "transactions",
     Icon: ArrowLeftRight,
     match: (p: string) => p.startsWith("/transactions"),
+  },
+  {
+    href: "/investments",
+    labelKey: "investments",
+    Icon: TrendingUp,
+    match: (p: string) => p.startsWith("/investments"),
   },
 ];
 

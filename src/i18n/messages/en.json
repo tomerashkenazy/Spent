@@ -34,9 +34,48 @@
     "home": "Home",
     "budget": "Budget",
     "transactions": "Transactions",
+    "investments": "Investments",
     "settings": "Settings",
     "starOnGitHub": "Star on GitHub",
     "brandTagline": "YOUR MONEY · OPEN SOURCE"
+  },
+  "investments": {
+    "pageTitle": "Investments",
+    "totalLabel": "Total invested",
+    "allocationLabel": "Allocation",
+    "accountsLabel": "Accounts",
+    "acrossAccounts": "Across {count, plural, one {# account} other {# accounts}}",
+    "sinceLastSync": "Change since the previous sync",
+    "sinceDate": "Change since {date}",
+    "asOf": "as of {date}",
+    "historyBuilding": "The chart fills in as you sync. Each sync adds one point per day.",
+    "longTerm": "Long-term savings",
+    "longTermHint": "Pension, gemel and hishtalmut",
+    "brokerage": "Investment portfolios",
+    "brokerageHint": "Securities you can sell any time",
+    "kinds": {
+      "brokerage": "Portfolio",
+      "pension": "Pension",
+      "gemel": "Kupat gemel",
+      "hishtalmut": "Keren hishtalmut",
+      "gemel_lehashkaa": "Gemel lehashkaa"
+    },
+    "noHoldings": "No securities in this portfolio right now.",
+    "colSecurity": "Security",
+    "colQuantity": "Quantity",
+    "colValue": "Value",
+    "colReturn": "Return",
+    "colProfit": "Profit / loss",
+    "cash": "Cash: {amount}",
+    "showAll": "Show all {count}",
+    "showFewer": "Show fewer",
+    "monthlyDeposit": "Monthly deposit",
+    "ytdReturn": "Return this year",
+    "feeOnDeposits": "Fee on deposits",
+    "feeOnBalance": "Fee on balance",
+    "emptyTitle": "No investments yet",
+    "emptyBody": "Securities portfolios at Bank Hapoalim and Bank Leumi are read with your existing bank login. Run a sync and they show up here.",
+    "emptyAction": "Manage connections"
   },
   "home": {
     "pageTitle": "Home",
@@ -653,11 +692,11 @@
     },
     "hapoalim": {
       "name": "Bank Hapoalim",
-      "blurb": "Includes Poalim wallets"
+      "blurb": "Includes Poalim wallets and securities"
     },
     "leumi": {
       "name": "Bank Leumi",
-      "blurb": "Personal & business accounts"
+      "blurb": "Personal & business accounts, plus securities"
     },
     "mizrahi": {
       "name": "Mizrahi Tefahot",

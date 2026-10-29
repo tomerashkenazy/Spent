@@ -34,9 +34,48 @@
     "home": "בית",
     "budget": "תקציב",
     "transactions": "תנועות",
+    "investments": "השקעות",
     "settings": "הגדרות",
     "starOnGitHub": "תייגו ב־GitHub",
     "brandTagline": "הכסף שלכם · קוד פתוח"
+  },
+  "investments": {
+    "pageTitle": "השקעות",
+    "totalLabel": "סך הכול מושקע",
+    "allocationLabel": "פיזור",
+    "accountsLabel": "חשבונות",
+    "acrossAccounts": "{count, plural, one {בחשבון אחד} other {ב־# חשבונות}}",
+    "sinceLastSync": "שינוי מאז הסנכרון הקודם",
+    "sinceDate": "שינוי מאז {date}",
+    "asOf": "נכון ל־{date}",
+    "historyBuilding": "הגרף מתמלא עם כל סנכרון. כל סנכרון מוסיף נקודה אחת ליום.",
+    "longTerm": "חיסכון לטווח ארוך",
+    "longTermHint": "פנסיה, גמל והשתלמות",
+    "brokerage": "תיקי השקעות",
+    "brokerageHint": "ניירות ערך שאפשר למכור בכל עת",
+    "kinds": {
+      "brokerage": "תיק ני״ע",
+      "pension": "פנסיה",
+      "gemel": "קופת גמל",
+      "hishtalmut": "קרן השתלמות",
+      "gemel_lehashkaa": "גמל להשקעה"
+    },
+    "noHoldings": "אין כרגע ניירות ערך בתיק הזה.",
+    "colSecurity": "נייר ערך",
+    "colQuantity": "כמות",
+    "colValue": "שווי",
+    "colReturn": "תשואה",
+    "colProfit": "רווח / הפסד",
+    "cash": "מזומן: {amount}",
+    "showAll": "הצגת כל ה־{count}",
+    "showFewer": "הצגת פחות",
+    "monthlyDeposit": "הפקדה חודשית",
+    "ytdReturn": "תשואה מתחילת השנה",
+    "feeOnDeposits": "דמי ניהול מהפקדה",
+    "feeOnBalance": "דמי ניהול מצבירה",
+    "emptyTitle": "אין עדיין השקעות",
+    "emptyBody": "תיקי ניירות ערך בבנק הפועלים ובבנק לאומי נקראים עם פרטי הכניסה הקיימים לבנק. הריצו סנכרון והם יופיעו כאן.",
+    "emptyAction": "ניהול חיבורים"
   },
   "home": {
     "pageTitle": "בית",
@@ -653,11 +692,11 @@
     },
     "hapoalim": {
       "name": "בנק הפועלים",
-      "blurb": "כולל ארנקי פועלים"
+      "blurb": "כולל ארנקי פועלים ותיק ני״ע"
     },
     "leumi": {
       "name": "בנק לאומי",
-      "blurb": "חשבונות פרטיים ועסקיים"
+      "blurb": "חשבונות פרטיים ועסקיים, כולל תיק ני״ע"
     },
     "mizrahi": {
       "name": "מזרחי טפחות",

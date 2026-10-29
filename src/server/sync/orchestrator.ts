@@ -26,6 +26,7 @@ import {
   incrementMerchantHits,
 } from "@/server/lib/merchant-memory";
 import { applyMerchantRulesToSyncRun } from "@/server/db/queries/excluded-merchants";
+import { saveInvestmentSnapshots } from "@/server/db/queries/investments";
 import { getAllCategories } from "@/server/db/queries/categories";
 import { getRecentCorrections } from "@/server/db/queries/category-corrections";
 import { scrapeBank } from "@/server/scrapers";
@@ -209,6 +210,7 @@ async function runScrapeForProvider(args: RunScrapeArgs): Promise<ScrapeResult> 
 
   return scrapeBank(workspaceId, provider, credentials, startDate, {
     manualTwoFactor,
+    fetchInvestments: true,
   });
 }
 
@@ -304,6 +306,7 @@ async function runHapoalimScrape(args: RunScrapeArgs): Promise<ScrapeResult> {
 
   const result = await scrapeBank(workspaceId, provider, credentials, startDate, {
     manualTwoFactor,
+    fetchInvestments: true,
     hapoalim: {
       // The device trust (cookies + localStorage) reuses the token slot so the
       // existing "Reset 2FA" button and credential plumbing apply to it.
@@ -407,6 +410,21 @@ async function syncOneCredential(
     syncRunId
   );
   applyMerchantRulesToSyncRun(workspaceId, syncRunId);
+  if (result.investments?.length) {
+    try {
+      saveInvestmentSnapshots(
+        workspaceId,
+        meta.id,
+        provider,
+        syncRunId,
+        result.investments
+      );
+    } catch (e) {
+      // The transactions are already saved; a portfolio problem must not
+      // turn this sync into a failure.
+      console.error("[sync] could not save investments:", (e as Error).message);
+    }
+  }
   completeSyncRun(syncRunId, added, updated);
 
   return {

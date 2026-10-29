@@ -8,6 +8,8 @@ import type {
   ScraperOptions,
 } from "israeli-bank-scrapers/lib/scrapers/interface";
 import type { CookieData } from "puppeteer";
+import { fetchHapoalimSecurities } from "./investments/hapoalim-securities";
+import type { ScrapedInvestmentAccount } from "./types";
 
 /**
  * Bank Hapoalim shows an SMS one-time-code overlay (form.auth-otp-login) on an
@@ -53,6 +55,8 @@ export interface HapoalimOtpHooks {
    * test, scheduled sync): the login then fails fast with a clear message.
    */
   awaitOtp?: (attempt: number) => Promise<string>;
+  /** Also read the securities portfolio after the transactions. */
+  fetchSecurities?: boolean;
 }
 
 export const HAPOALIM_OTP_REQUIRED_MESSAGE =
@@ -119,6 +123,7 @@ export class HapoalimOtpScraper extends HapoalimScraper {
   capturedDeviceTrust?: string;
   /** True when the bank asked for a code and no `awaitOtp` was supplied. */
   otpRequiredButUnavailable = false;
+  capturedInvestments?: ScrapedInvestmentAccount[];
 
   private hooks: HapoalimOtpHooks;
 
@@ -284,6 +289,24 @@ export class HapoalimOtpScraper extends HapoalimScraper {
     } catch {
       return false;
     }
+  }
+
+  async fetchData() {
+    const result = await super.fetchData();
+    if (result.success && this.hooks.fetchSecurities) {
+      try {
+        this.capturedInvestments = await fetchHapoalimSecurities(
+          this.page,
+          this.baseUrl,
+          result.accounts.map((a) => a.accountNumber)
+        );
+      } catch {
+        // Never fail the transaction sync over the portfolio; the message
+        // could echo account data, so it is not logged.
+        console.warn("[hapoalim] securities fetch failed");
+      }
+    }
+    return result;
   }
 
   async terminate(success: boolean) {
