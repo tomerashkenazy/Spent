@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getDb } from "../index";
+import { spendingFilter } from "./spending-filter";
 import { toLocalISODate } from "../../lib/date-utils";
 import type {
   HomeBankHealthItem,
@@ -23,7 +24,7 @@ export function getCashFlow(
       `SELECT COALESCE(SUM(charged_amount), 0) as total
        FROM transactions
        WHERE workspace_id = ? AND date >= ? AND date <= ?
-         AND status = 'completed' AND kind = 'income' AND is_excluded = 0`
+         AND status = 'completed' AND kind = 'income' AND ${spendingFilter()}`
     )
     .get(workspaceId, from, to) as { total: number };
   const expenses = db
@@ -31,7 +32,7 @@ export function getCashFlow(
       `SELECT COALESCE(SUM(ABS(charged_amount)), 0) as total
        FROM transactions
        WHERE workspace_id = ? AND date >= ? AND date <= ?
-         AND status = 'completed' AND kind = 'expense' AND is_excluded = 0`
+         AND status = 'completed' AND kind = 'expense' AND ${spendingFilter()}`
     )
     .get(workspaceId, from, to) as { total: number };
   return {
@@ -66,7 +67,7 @@ export function getHistoricalTrend(
     `SELECT COALESCE(SUM(ABS(charged_amount)), 0) as total
      FROM transactions
      WHERE workspace_id = ? AND date >= ? AND date <= ?
-       AND status = 'completed' AND kind = 'expense' AND is_excluded = 0`
+       AND status = 'completed' AND kind = 'expense' AND ${spendingFilter()}`
   );
 
   return months.map((m) => {
@@ -237,7 +238,7 @@ export function getCategorySnapshot(
        FROM transactions
        WHERE workspace_id = ? AND date >= ? AND date <= ?
          AND status = 'completed' AND kind = 'expense'
-         AND category_id IS NOT NULL AND is_excluded = 0
+         AND category_id IS NOT NULL AND ${spendingFilter()}
        GROUP BY category_id`
     )
     .all(workspaceId, from, to) as Array<{ categoryId: number; amount: number }>;

@@ -3,28 +3,34 @@
 import { useTranslations } from "next-intl";
 import { CardShell } from "@/components/home/card-shell";
 import { formatCurrency } from "@/lib/formatters";
-import { isLongTermInvestment, type InvestmentAccount } from "@/lib/types";
+import type { InvestmentAccount, InvestmentKind } from "@/lib/types";
+
+const OPACITIES = [1, 0.55, 0.3, 0.15];
 
 /**
- * Long-term savings vs liquid investments. Two segments in one ink at two
- * strengths, each labelled with its amount and share, so identity never rests
- * on color.
+ * Split of the given accounts by kind (e.g. pension vs hishtalmut). Segments
+ * share one ink at different strengths and are each labelled with amount and
+ * share, so identity never rests on color.
  */
 export function AllocationCard({ accounts }: { accounts: InvestmentAccount[] }) {
   const t = useTranslations("investments");
-  let longTerm = 0;
-  let brokerage = 0;
+  const byKind = new Map<InvestmentKind, number>();
   for (const a of accounts) {
-    if (isLongTermInvestment(a.kind)) longTerm += a.totalValue;
-    else brokerage += a.totalValue;
+    byKind.set(a.kind, (byKind.get(a.kind) ?? 0) + a.totalValue);
   }
-  const total = longTerm + brokerage;
+  const total = [...byKind.values()].reduce((s, v) => s + v, 0);
   const share = (v: number) => (total > 0 ? (v / total) * 100 : 0);
 
-  const rows = [
-    { key: "longTerm", label: t("longTerm"), hint: t("longTermHint"), value: longTerm, opacity: 1 },
-    { key: "brokerage", label: t("brokerage"), hint: t("brokerageHint"), value: brokerage, opacity: 0.35 },
-  ].filter((r) => r.value > 0);
+  const rows = [...byKind.entries()]
+    .filter(([, value]) => value > 0)
+    .sort((a, b) => b[1] - a[1])
+    .map(([kind, value], i) => ({
+      key: kind,
+      label: t(`kindsPlural.${kind}`),
+      hint: t(`kindHints.${kind}`),
+      value,
+      opacity: OPACITIES[Math.min(i, OPACITIES.length - 1)],
+    }));
 
   return (
     <CardShell label={t("allocationLabel")}>

@@ -37,7 +37,8 @@
     "investments": "Investments",
     "settings": "Settings",
     "starOnGitHub": "Star on GitHub",
-    "brandTagline": "YOUR MONEY · OPEN SOURCE"
+    "brandTagline": "YOUR MONEY · OPEN SOURCE",
+    "projects": "Projects"
   },
   "investments": {
     "pageTitle": "Investments",
@@ -49,10 +50,6 @@
     "sinceDate": "Change since {date}",
     "asOf": "as of {date}",
     "historyBuilding": "The chart fills in as you sync. Each sync adds one point per day.",
-    "longTerm": "Long-term savings",
-    "longTermHint": "Pension, gemel and hishtalmut",
-    "brokerage": "Investment portfolios",
-    "brokerageHint": "Securities you can sell any time",
     "kinds": {
       "brokerage": "Portfolio",
       "pension": "Pension",
@@ -74,8 +71,37 @@
     "feeOnDeposits": "Fee on deposits",
     "feeOnBalance": "Fee on balance",
     "emptyTitle": "No investments yet",
-    "emptyBody": "Securities portfolios at Bank Hapoalim and Bank Leumi are read with your existing bank login. Psagot can be added as its own connection. Run a sync and they show up here.",
-    "emptyAction": "Manage connections"
+    "emptyBody": "Securities portfolios at Bank Hapoalim and Bank Leumi are read with your existing bank login. Psagot, Harel, Menora, Analyst and More can be added as their own connections. Run a sync and they show up here.",
+    "emptyAction": "Manage connections",
+    "groups": {
+      "investments": "Investments",
+      "savings": "Pension & study funds"
+    },
+    "groupTotals": {
+      "investments": "Total invested",
+      "savings": "Total saved"
+    },
+    "groupEmpty": {
+      "investments": "No investment portfolios connected yet.",
+      "savings": "No pension, gemel or hishtalmut accounts connected yet."
+    },
+    "kindsPlural": {
+      "brokerage": "Portfolios",
+      "pension": "Pension",
+      "gemel": "Kupot gemel",
+      "hishtalmut": "Study funds",
+      "gemel_lehashkaa": "Gemel lehashkaa"
+    },
+    "kindHints": {
+      "brokerage": "Securities you can sell any time",
+      "pension": "Retirement savings, locked until retirement",
+      "gemel": "Long-term savings funds",
+      "hishtalmut": "Keren hishtalmut, available after six years",
+      "gemel_lehashkaa": "Investment funds you can withdraw any time"
+    },
+    "moneyMarketLabel": "Money market funds",
+    "moneyMarketShare": "{percent}% of your investments",
+    "moneyMarketPill": "Money market"
   },
   "home": {
     "pageTitle": "Home",
@@ -231,7 +257,11 @@
     "includeToast": "Included in totals",
     "paginationRange": "{from} to {to} of {total}",
     "previous": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "addToProject": "Add to project",
+    "addToProjectToast": "Added to {project}",
+    "rowTransfer": "Transfer · not counted",
+    "rowTransferTooltip": "Moves money between your own accounts or pays a card bill. Left out of spending and income."
   },
   "dashboard": {
     "syncing": "Syncing…",
@@ -410,7 +440,9 @@
       "justNow": "just now",
       "minutesAgo": "{count}m ago",
       "hoursAgo": "{count}h ago",
-      "daysAgo": "{count}d ago"
+      "daysAgo": "{count}d ago",
+      "otpTitle": "Enter the SMS code",
+      "otpDescription": "{provider} sent a one-time code to your phone. Enter it to finish the sync. Closing this window cancels the sync."
     },
     "ai": {
       "title": "AI & automation",
@@ -470,9 +502,14 @@
       "title": "Data & privacy",
       "description": "Spent runs locally. Your credentials are encrypted at rest and never leave your machine.",
       "showBrowserLabel": "Show browser during sync",
-      "showBrowserHint": "Opens a visible Chromium window so you can watch the scrape happen (useful for debugging or solving 2FA / captcha challenges). Also enables verbose scraper logs in your dev terminal.",
+      "showBrowserHint": "Opens a visible browser window so you can watch the scrape happen (useful for debugging or solving 2FA / captcha challenges). Also enables verbose scraper logs in your dev terminal.",
       "browserVisibleSaved": "Browser will be visible on next sync",
       "browserHiddenSaved": "Browser will stay hidden",
+      "loginBrowserLabel": "Browser for login windows",
+      "loginBrowserHint": "Login, 2FA and captcha windows open in this browser. Spent always uses a fresh, separate window, so your own browser profile, saved passwords and history are never touched. Background syncs stay hidden either way.",
+      "loginBrowserFirefoxMissing": "Firefox was not found on this computer. Install it, or set SPENT_FIREFOX_PATH to its location.",
+      "loginBrowserFirefoxSaved": "Login windows will open in Firefox",
+      "loginBrowserChromeSaved": "Login windows will open in Chrome",
       "storageCardTitle": "How your data is stored",
       "storageCardDescription": "Bank credentials and your Claude API key are encrypted with AES-256-GCM. The encryption key lives at data/.encryption-key on your machine (gitignored) and is auto-generated on first run. All transaction data lives in data/spent.db. To reset everything, stop the dev server and delete the data/ directory.",
       "excludedTitle": "Excluded merchants",
@@ -779,8 +816,12 @@
         "placeholder": "Password you use on digital.isracard.co.il",
         "hint": "The same password you use to log in on the Isracard website."
       },
-      "username": { "label": "Username" },
-      "userCode": { "label": "User Code" },
+      "username": {
+        "label": "Username"
+      },
+      "userCode": {
+        "label": "User Code"
+      },
       "num": {
         "label": "Account Number",
         "discountPlaceholder": "Your Discount account number",
@@ -804,6 +845,22 @@
         "placeholder": "+972501234567",
         "hint": "Where the SMS one-time code will be sent. International format including the country code."
       }
+    },
+    "harel": {
+      "name": "Harel",
+      "blurb": "Pension, gemel and study funds"
+    },
+    "menora": {
+      "name": "Menora Mivtachim",
+      "blurb": "Pension, gemel and study funds"
+    },
+    "analyst": {
+      "name": "Analyst",
+      "blurb": "Gemel and study funds"
+    },
+    "more": {
+      "name": "More",
+      "blurb": "Gemel, study and pension funds"
     }
   },
   "ollamaModels": {
@@ -821,5 +878,68 @@
     "daysAgoShort": "{count}d ago",
     "weeksAgoShort": "{count}w ago",
     "monthsAgoShort": "{count}mo ago"
+  },
+  "projects": {
+    "pageTitle": "Projects",
+    "newProject": "New project",
+    "projectSettings": "Project settings",
+    "createTitle": "New project",
+    "editTitle": "Project settings",
+    "createDescription": "Track a one-off goal like a wedding, a renovation or a trip, with its own budget.",
+    "nameLabel": "Name",
+    "namePlaceholder": "Wedding",
+    "budgetLabel": "Budget (optional)",
+    "budgetPlaceholder": "150000",
+    "excludeLabel": "Keep out of monthly spending",
+    "excludeHint": "Expenses added here stop counting in Home and Budget, so a big one-off payment does not distort your month.",
+    "createAction": "Create project",
+    "confirmDelete": "Click again to delete",
+    "deletedToast": "Deleted {name}",
+    "emptyTitle": "Plan a big expense",
+    "emptyBody": "A project collects every payment for one goal, like a wedding, with who paid, what it was for and how much is left of the budget.",
+    "addExpense": "Add expense",
+    "addExpenseTitle": "Add an expense",
+    "addExpenseDescription": "Pick a synced transaction, or enter one by hand for cash, gifts or accounts that are not connected.",
+    "fromTransactions": "From transactions",
+    "manualEntry": "Enter by hand",
+    "searchPlaceholder": "Search by merchant or description",
+    "noTransactionsFound": "No matching expenses.",
+    "alreadyAdded": "Already in this project",
+    "addAction": "Add to project",
+    "descriptionPlaceholder": "Photographer deposit",
+    "categoryPlaceholder": "Venue, photo, dress…",
+    "notesPlaceholder": "Add a note",
+    "expensesLabel": "Expenses",
+    "noItems": "No expenses yet. Add one from your transactions, or use “Add to project” in the Transactions page.",
+    "colDate": "Date",
+    "colDescription": "Description",
+    "colAmount": "Amount",
+    "colPaidFrom": "Paid from",
+    "colCategory": "Category",
+    "colStatus": "Status",
+    "colNotes": "Notes",
+    "rowActions": "Row actions",
+    "removeRow": "Remove from project",
+    "removedToast": "Removed from the project",
+    "linkedTransaction": "Linked to a synced transaction",
+    "totalRow": "Total ({count, plural, one {# expense} other {# expenses}})",
+    "status": {
+      "paid": "Paid",
+      "deposit": "Deposit",
+      "unpaid": "Not paid yet"
+    },
+    "paidFromNone": "Not set",
+    "paidFromOther": "Other…",
+    "paidFromOtherPlaceholder": "e.g. Money market fund, cash",
+    "summarySpent": "Spent",
+    "ofBudget": "of {budget} · {left} left",
+    "overBudget": "{amount} over budget",
+    "noBudget": "No budget set. Add one in project settings.",
+    "summaryByPayer": "By who paid",
+    "summaryCommitted": "Still to pay",
+    "summaryUnpaidHint": "Rows marked not paid yet",
+    "summaryDeposits": "Deposits paid",
+    "summaryMoneyMarket": "Left in money market funds",
+    "summaryMoneyMarketHint": "Across all connected portfolios, as of the last sync"
   }
 }

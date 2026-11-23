@@ -23,6 +23,9 @@ Encrypted. AI-categorized. Yours.
 
 </div>
 
+> [!NOTE]
+> This is a fork of [Spent](https://github.com/Shaya16/Spent) by Shay Avivi. It adds investment accounts (Hapoalim, Leumi, Psagot), pension portals (Harel, Menora, More, Analyst), Pepper, internal transfer detection and a Projects page. All credit for the original app goes to its author. See [LICENSE](LICENSE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
 > [!WARNING]
 > Personal, local-only tool. Scraping financial institutions may violate their Terms of Service. Use only for your own accounts on your own machine. **Do not deploy as a hosted service.**
 
@@ -373,7 +376,7 @@ Conventions:
 
 ## License
 
-MIT
+MIT. See [LICENSE](LICENSE). Original project by [Shay Avivi](https://github.com/Shaya16/Spent).
 
 ## Acknowledgments
 

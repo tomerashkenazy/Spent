@@ -27,6 +27,8 @@ export const CREDIT_CARD_PAYMENT_PATTERNS: readonly RegExp[] = [
   // Match כאל / כ.א.ל / כ א ל / כ-א-ל (Israeli abbreviation for Cal credit).
   /כ[\s.\-־]?א[\s.\-־]?ל/i,
   /מקסימום/i,
+  // Max bills show up in bank statements as "מקס איט פיננסי", often truncated.
+  /מקס\s*איט/i,
   /מאסטרקארד/i,
   /אמריקן\s*אקספרס/i,
   /דיינרס/i,
@@ -43,6 +45,8 @@ export const CREDIT_CARD_PAYMENT_PATTERNS: readonly RegExp[] = [
   /\bAMEX\b/i,
   /\bAMERICAN\s+EXPRESS\b/i,
 ];
+
+export const BANK_PROVIDER_IDS: readonly BankProvider[] = [...BANK_PROVIDERS_SET];
 
 export function isBankProvider(provider: string): provider is BankProvider {
   return BANK_PROVIDERS_SET.has(provider as BankProvider);

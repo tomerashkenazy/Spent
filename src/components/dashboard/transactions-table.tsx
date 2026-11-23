@@ -24,6 +24,10 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -33,10 +37,12 @@ import {
   Check,
   ArrowDownRight,
   ArrowUpRight,
+  ArrowLeftRight,
   Wallet,
   Tags,
   EyeOff,
   Eye,
+  FolderKanban,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { formatCurrency, formatDate } from "@/lib/formatters";
@@ -46,6 +52,8 @@ import {
   approveTransactionCategory,
   getCategories,
   setTransactionExcluded,
+  listProjects,
+  addTransactionToProject,
 } from "@/lib/api";
 import { toast } from "sonner";
 import { translateCategoryName, translateProviderName } from "@/lib/i18n-data";
@@ -185,6 +193,31 @@ export function TransactionsTable({
     queryClient.invalidateQueries({ queryKey: ["home"] });
     queryClient.invalidateQueries({ queryKey: ["categories"] });
     queryClient.invalidateQueries({ queryKey: ["excluded-merchants"] });
+  };
+
+  const projectsQuery = useQuery({
+    queryKey: ["projects"],
+    queryFn: listProjects,
+  });
+  const projects = projectsQuery.data ?? [];
+
+  const handleAddToProject = async (
+    txn: TransactionWithCategory,
+    projectId: number,
+    projectName: string,
+  ) => {
+    setUpdatingId(txn.id);
+    try {
+      await addTransactionToProject(projectId, txn.id);
+      invalidateAfterExclude();
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["project-items", projectId] });
+      toast.success(t("addToProjectToast", { project: projectName }));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed");
+    } finally {
+      setUpdatingId(null);
+    }
   };
 
   const handleExcludeToggle = async (
@@ -503,9 +536,14 @@ export function TransactionsTable({
               <TableBody>
                 {transactions.map((txn) => {
                   const isIncome = txn.chargedAmount > 0;
-                  const directionColor = isIncome
-                    ? "var(--status-on-track)"
-                    : "var(--status-over)";
+                  // Transfers (card bills, moves between own accounts) are not
+                  // counted anywhere, so they are drawn muted, not red or green.
+                  const isTransfer = txn.kind === "transfer";
+                  const directionColor = isTransfer
+                    ? "var(--muted-foreground)"
+                    : isIncome
+                      ? "var(--status-on-track)"
+                      : "var(--status-over)";
                   const categoryKind: Kind = isIncome ? "income" : "expense";
                   const categoryName = txn.categoryName
                     ? translateCategoryName(txn.categoryName, tCat)
@@ -520,7 +558,9 @@ export function TransactionsTable({
                     >
                       <TableCell>
                         <div style={{ color: directionColor }}>
-                          {isIncome ? (
+                          {isTransfer ? (
+                            <ArrowLeftRight className="h-4 w-4" />
+                          ) : isIncome ? (
                             <ArrowUpRight className="h-4 w-4" />
                           ) : (
                             <ArrowDownRight className="h-4 w-4" />
@@ -562,6 +602,12 @@ export function TransactionsTable({
                             {txn.memo}
                           </div>
                         )}
+                        {txn.projectName && (
+                          <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                            <FolderKanban className="h-3 w-3" />
+                            {txn.projectName}
+                          </div>
+                        )}
                         {txn.type === "installments" &&
                           txn.installmentNumber &&
                           txn.installmentTotal && (
@@ -574,6 +620,15 @@ export function TransactionsTable({
                           )}
                       </TableCell>
                       <TableCell>
+                        {isTransfer ? (
+                          <Badge
+                            variant="outline"
+                            className="border-dashed text-muted-foreground"
+                            title={t("rowTransferTooltip")}
+                          >
+                            {t("rowTransfer")}
+                          </Badge>
+                        ) : (
                         <div className="flex items-center gap-1.5">
                           <DropdownMenu>
                             <DropdownMenuTrigger
@@ -632,6 +687,7 @@ export function TransactionsTable({
                             </Button>
                           )}
                         </div>
+                        )}
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
                         <TransactionSourceCell
@@ -640,7 +696,10 @@ export function TransactionsTable({
                         />
                       </TableCell>
                       <TableCell
-                        className="text-end font-medium tabular-nums"
+                        className={cn(
+                          "text-end font-medium tabular-nums",
+                          isTransfer && "font-normal",
+                        )}
                         style={{ color: directionColor }}
                       >
                         {formatCurrency(txn.chargedAmount, "ILS", locale)}
@@ -684,6 +743,28 @@ export function TransactionsTable({
                                   <EyeOff className="me-2 h-3.5 w-3.5" />
                                   {t("excludeMerchantAction")}
                                 </DropdownMenuItem>
+                              </>
+                            )}
+                            {projects.length > 0 && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuSub>
+                                  <DropdownMenuSubTrigger>
+                                    <FolderKanban className="me-2 h-3.5 w-3.5" />
+                                    {t("addToProject")}
+                                  </DropdownMenuSubTrigger>
+                                  <DropdownMenuSubContent side="inline-end">
+                                    {projects.map((p) => (
+                                      <DropdownMenuItem
+                                        key={p.id}
+                                        disabled={txn.projectId === p.id}
+                                        onClick={() => handleAddToProject(txn, p.id, p.name)}
+                                      >
+                                        {p.name}
+                                      </DropdownMenuItem>
+                                    ))}
+                                  </DropdownMenuSubContent>
+                                </DropdownMenuSub>
                               </>
                             )}
                           </DropdownMenuContent>

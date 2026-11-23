@@ -8,6 +8,7 @@ import { ProviderBadge } from "@/components/setup/provider-badge";
 import { formatCurrency } from "@/lib/formatters";
 import { translateProviderName } from "@/lib/i18n-data";
 import { cn } from "@/lib/utils";
+import { isMoneyMarketFund } from "@/lib/investments";
 import { BANK_PROVIDERS, type InvestmentAccount } from "@/lib/types";
 import type { Locale } from "@/i18n/routing";
 import { ChangePill, signedPercentClass } from "./change-pill";
@@ -152,7 +153,14 @@ function Holdings({
               >
                 <td className="py-2.5 pe-3">
                   <div className="flex flex-col">
-                    <span className="line-clamp-1">{h.name}</span>
+                    <span className="flex min-w-0 items-center gap-2">
+                      <span className="line-clamp-1">{h.name}</span>
+                      {isMoneyMarketFund(h.name) && (
+                        <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                          {t("moneyMarketPill")}
+                        </span>
+                      )}
+                    </span>
                     {h.symbol && h.symbol !== h.name && (
                       <span className="text-xs text-muted-foreground">{h.symbol}</span>
                     )}

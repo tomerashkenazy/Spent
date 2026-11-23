@@ -12,6 +12,10 @@ import type {
   HomePayload,
   ActivitySnapshot,
   InvestmentsPayload,
+  Project,
+  ProjectInput,
+  ProjectItem,
+  ProjectItemInput,
 } from "./types";
 import { getActiveWorkspaceIdSync } from "./workspace-store";
 
@@ -679,4 +683,78 @@ export function pullOllamaModel(
   })();
 
   return { cancel: () => controller.abort() };
+}
+
+const JSON_HEADERS = { "Content-Type": "application/json" };
+
+export function listProjects() {
+  return fetchJSON<Project[]>("/api/projects");
+}
+
+export function createProject(input: {
+  name: string;
+  budgetAmount: number | null;
+  excludesFromSpending: boolean;
+}) {
+  return fetchJSON<Project>("/api/projects", {
+    method: "POST",
+    headers: JSON_HEADERS,
+    body: JSON.stringify(input),
+  });
+}
+
+export function updateProject(id: number, input: ProjectInput) {
+  return fetchJSON<Project>(`/api/projects/${id}`, {
+    method: "PATCH",
+    headers: JSON_HEADERS,
+    body: JSON.stringify(input),
+  });
+}
+
+export function deleteProject(id: number) {
+  return fetchJSON<{ success: boolean }>(`/api/projects/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export function listProjectItems(projectId: number) {
+  return fetchJSON<ProjectItem[]>(`/api/projects/${projectId}/items`);
+}
+
+export function addTransactionToProject(projectId: number, transactionId: number) {
+  return fetchJSON<ProjectItem>(`/api/projects/${projectId}/items`, {
+    method: "POST",
+    headers: JSON_HEADERS,
+    body: JSON.stringify({ transactionId }),
+  });
+}
+
+export function addManualProjectItem(
+  projectId: number,
+  input: ProjectItemInput & { date: string; description: string; amount: number }
+) {
+  return fetchJSON<ProjectItem>(`/api/projects/${projectId}/items`, {
+    method: "POST",
+    headers: JSON_HEADERS,
+    body: JSON.stringify(input),
+  });
+}
+
+export function updateProjectItem(
+  projectId: number,
+  itemId: number,
+  input: ProjectItemInput
+) {
+  return fetchJSON<ProjectItem>(`/api/projects/${projectId}/items/${itemId}`, {
+    method: "PATCH",
+    headers: JSON_HEADERS,
+    body: JSON.stringify(input),
+  });
+}
+
+export function deleteProjectItem(projectId: number, itemId: number) {
+  return fetchJSON<{ success: boolean }>(
+    `/api/projects/${projectId}/items/${itemId}`,
+    { method: "DELETE" }
+  );
 }

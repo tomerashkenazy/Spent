@@ -1,18 +1,31 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { startSync, type SyncProgressEvent } from "@/lib/api";
+import { startSync, submitSyncOtp, type SyncProgressEvent } from "@/lib/api";
 
 export interface SyncState {
   syncing: boolean;
   stage: string;
 }
 
+/** A provider waiting for the SMS code the user received. */
+export interface OtpRequest {
+  credentialId: number;
+  syncRunId: number;
+  provider: string;
+}
+
 export function useBankSync() {
   const queryClient = useQueryClient();
   const [state, setState] = useState<Record<number, SyncState>>({});
+  const [otpRequest, setOtpRequest] = useState<OtpRequest | null>(null);
+  const cancels = useRef<Map<number, () => void>>(new Map());
+
+  const clearOtp = useCallback((credentialId: number) => {
+    setOtpRequest((prev) => (prev?.credentialId === credentialId ? null : prev));
+  }, []);
 
   const start = useCallback(
     (credentialId: number) => {
@@ -28,21 +41,21 @@ export function useBankSync() {
             [credentialId]: { syncing: true, stage: "Pulling transactions…" },
           }));
         } else if (event.type === "provider-2fa-needed") {
-          cancel();
+          setOtpRequest({
+            credentialId,
+            syncRunId: event.data.syncRunId as number,
+            provider: event.data.provider as string,
+          });
           setState((prev) => ({
             ...prev,
-            [credentialId]: { syncing: false, stage: "" },
+            [credentialId]: { syncing: true, stage: "Waiting for the SMS code…" },
           }));
-          const label =
-            (event.data.label as string | undefined) ??
-            (event.data.provider as string | undefined) ??
-            "Bank";
-          toast.warning(`${label} needs a 2FA code`, {
-            description:
-              "Use the global Sync button on the dashboard to enter the one-time code. Spent will remember the token for future syncs.",
-            duration: 12000,
-            closeButton: true,
-          });
+        } else if (event.type === "provider-2fa-submitted") {
+          clearOtp(credentialId);
+          setState((prev) => ({
+            ...prev,
+            [credentialId]: { syncing: true, stage: "Verifying code…" },
+          }));
         } else if (event.type === "provider-2fa-manual") {
           setState((prev) => ({
             ...prev,
@@ -58,6 +71,7 @@ export function useBankSync() {
             },
           }));
         } else if (event.type === "provider-done") {
+          clearOtp(credentialId);
           if (event.data.ok === false) {
             failed = true;
             toast.error(
@@ -66,6 +80,8 @@ export function useBankSync() {
             );
           }
         } else if (event.type === "complete") {
+          cancels.current.delete(credentialId);
+          clearOtp(credentialId);
           setState((prev) => ({
             ...prev,
             [credentialId]: { syncing: false, stage: "" },
@@ -85,6 +101,8 @@ export function useBankSync() {
           queryClient.invalidateQueries({ queryKey: ["summary"] });
           queryClient.invalidateQueries({ queryKey: ["transactions"] });
         } else if (event.type === "error") {
+          cancels.current.delete(credentialId);
+          clearOtp(credentialId);
           setState((prev) => ({
             ...prev,
             [credentialId]: { syncing: false, stage: "" },
@@ -95,14 +113,29 @@ export function useBankSync() {
           });
         }
       });
+      cancels.current.set(credentialId, cancel);
     },
-    [queryClient]
+    [queryClient, clearOtp]
   );
+
+  const submitOtp = useCallback(async (syncRunId: number, code: string) => {
+    await submitSyncOtp(syncRunId, code);
+  }, []);
+
+  /** Gives up on the code: stops that sync. */
+  const cancelOtp = useCallback(() => {
+    if (!otpRequest) return;
+    const { credentialId } = otpRequest;
+    cancels.current.get(credentialId)?.();
+    cancels.current.delete(credentialId);
+    setOtpRequest(null);
+    setState((prev) => ({ ...prev, [credentialId]: { syncing: false, stage: "" } }));
+  }, [otpRequest]);
 
   const stateFor = (credentialId: number): SyncState =>
     state[credentialId] ?? { syncing: false, stage: "" };
 
   const anySyncing = Object.values(state).some((s) => s.syncing);
 
-  return { start, stateFor, anySyncing };
+  return { start, stateFor, anySyncing, otpRequest, submitOtp, cancelOtp };
 }

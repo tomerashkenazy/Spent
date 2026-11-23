@@ -2,6 +2,7 @@ import "server-only";
 
 import { getDb } from "../index";
 import type { AppSettings } from "@/lib/types";
+import { findFirefox } from "../../lib/firefox";
 
 // Global settings live in the `settings` table and apply to every workspace.
 // Currently: ai_provider, ai_ollama_url, ai_ollama_model, plus the encrypted
@@ -80,6 +81,8 @@ export function getAppSettings(workspaceId: number): AppSettings {
     autoSyncTime:
       storedTime && AUTO_SYNC_TIME_RE.test(storedTime) ? storedTime : "06:00",
     language: storedLang === "he" ? "he" : "en",
+    loginBrowser: getGlobalSetting("login_browser") === "firefox" ? "firefox" : "chrome",
+    firefoxInstalled: findFirefox() !== null,
   };
 }
 
@@ -100,6 +103,9 @@ export function updateAppSettings(
     }
     if (settings.ollamaModel !== undefined) {
       setGlobalSetting("ai_ollama_model", settings.ollamaModel);
+    }
+    if (settings.loginBrowser === "chrome" || settings.loginBrowser === "firefox") {
+      setGlobalSetting("login_browser", settings.loginBrowser);
     }
     if (settings.showBrowser !== undefined) {
       setWorkspaceSetting(

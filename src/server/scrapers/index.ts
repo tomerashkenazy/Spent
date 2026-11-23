@@ -6,6 +6,7 @@ import type { BankProvider } from "@/lib/types";
 import { getWorkspaceSetting } from "../db/queries/settings";
 import { HapoalimOtpScraper, type HapoalimOtpHooks } from "./hapoalim-otp";
 import { LeumiInvestmentsScraper } from "./investments/leumi-securities";
+import { launchVisibleFirefox } from "./login-browser";
 
 export interface BankScrapeResult extends ScrapeResult {
   /** Hapoalim device trust captured after a successful scrape. */
@@ -163,16 +164,18 @@ async function runScrape(
     chromiumArgs.push("--no-sandbox");
   }
 
+  // A pre-launched browser replaces the library's own Chromium launch; the
+  // library still closes it when the scrape ends.
+  const firefox = showBrowser ? await launchVisibleFirefox() : null;
   const scraperOptions = {
     companyId,
     startDate,
     combineInstallments: false,
-    showBrowser,
     // Verbose logs include URLs and posted payloads (incl. credentials).
     // Only enable when the user is also showing the browser (= they're debugging).
     verbose: showBrowser,
     timeout: 60000,
-    args: chromiumArgs,
+    ...(firefox ? { browser: firefox } : { showBrowser, args: chromiumArgs }),
   };
   // Hapoalim gets a subclass that handles the bank's SMS device check.
   const hapoalimScraper =

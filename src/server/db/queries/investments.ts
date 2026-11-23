@@ -4,7 +4,7 @@ import { getDb } from "../index";
 import { toLocalISODate } from "../../lib/date-utils";
 import type { ScrapedInvestmentAccount } from "../../scrapers/types";
 import {
-  isLongTermInvestment,
+  investmentGroup,
   type InvestmentAccount,
   type InvestmentHistoryPoint,
   type InvestmentHolding,
@@ -253,13 +253,13 @@ export function getInvestmentHistory(workspaceId: number): InvestmentHistoryPoin
       i += 1;
     }
     if (date < start) continue;
-    let brokerage = 0;
-    let longTerm = 0;
+    let investments = 0;
+    let savings = 0;
     for (const { kind, value } of latest.values()) {
-      if (isLongTermInvestment(kind)) longTerm += value;
-      else brokerage += value;
+      if (investmentGroup(kind) === "savings") savings += value;
+      else investments += value;
     }
-    points.push({ date, brokerage, longTerm, total: brokerage + longTerm });
+    points.push({ date, investments, savings, total: investments + savings });
   }
   return points;
 }

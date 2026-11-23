@@ -222,7 +222,9 @@ function ProviderRowView({
             {row.status === "manual-2fa" && (
               <span className="inline-flex items-center gap-1">
                 <ExternalLink className="h-3 w-3" />
-                Solve the 2FA in the popup window
+                {isInvestment
+                  ? "Sign in in the Chrome window that opened"
+                  : "Solve the 2FA in the popup window"}
               </span>
             )}
             {row.status === "done" &&
@@ -251,7 +253,7 @@ function ProviderRowView({
   );
 }
 
-function OtpInputArea({
+export function OtpInputArea({
   syncRunId,
   onSubmit,
 }: {

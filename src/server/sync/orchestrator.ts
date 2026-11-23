@@ -26,6 +26,7 @@ import {
   incrementMerchantHits,
 } from "@/server/lib/merchant-memory";
 import { applyMerchantRulesToSyncRun } from "@/server/db/queries/excluded-merchants";
+import { markInternalTransfers } from "@/server/db/queries/internal-transfers";
 import { saveInvestmentSnapshots } from "@/server/db/queries/investments";
 import { getAllCategories } from "@/server/db/queries/categories";
 import { getRecentCorrections } from "@/server/db/queries/category-corrections";
@@ -38,6 +39,18 @@ import {
   scrapePepperFirstTime,
   scrapePepperWithToken,
 } from "@/server/scrapers/pepper";
+import { scrapeAnalyst } from "../scrapers/analyst";
+import { scrapeHarel } from "../scrapers/harel";
+import { scrapeMenora } from "../scrapers/menora";
+import { scrapeMore } from "../scrapers/more";
+import type {
+  SmsPortalOptions,
+  SmsPortalResult,
+} from "../scrapers/pension/sms-portal";
+import type {
+  VisiblePortalOptions,
+  VisiblePortalResult,
+} from "../scrapers/pension/visible-portal";
 import {
   scrapePsagotWithOtp,
   scrapePsagotWithSession,
@@ -140,6 +153,16 @@ async function runScrapeForProvider(args: RunScrapeArgs): Promise<ScrapeResult> 
   }
   if (provider === "psagot") {
     return runPsagotScrape(args);
+  }
+  const smsPortal = SMS_PORTALS[provider];
+  if (smsPortal) {
+    return runSmsPortalScrape(args, smsPortal);
+  }
+  if (provider === "menora") {
+    return runVisiblePortalScrape(args, scrapeMenora);
+  }
+  if (provider === "analyst") {
+    return runVisiblePortalScrape(args, scrapeAnalyst);
   }
 
   if (supportsProgrammaticTwoFactor(provider)) {
@@ -422,6 +445,103 @@ async function runPsagotScrape(args: RunScrapeArgs): Promise<ScrapeResult> {
   return result;
 }
 
+/** Pension portals that sign in with ID, phone and an SMS code. */
+const SMS_PORTALS: Partial<
+  Record<BankProvider, { name: string; scrape: (o: SmsPortalOptions) => Promise<SmsPortalResult> }>
+> = {
+  harel: { name: "Harel", scrape: scrapeHarel },
+  more: { name: "More", scrape: scrapeMore },
+};
+
+async function runSmsPortalScrape(
+  args: RunScrapeArgs,
+  portal: { name: string; scrape: (o: SmsPortalOptions) => Promise<SmsPortalResult> }
+): Promise<ScrapeResult> {
+  const {
+    workspaceId,
+    workspaceName,
+    credentialId,
+    provider,
+    credentials,
+    syncRunId,
+    send,
+  } = args;
+
+  if (!credentials.id || !credentials.phoneNumber) {
+    return {
+      success: false,
+      accounts: [],
+      errorMessage: `ID number and phone number are required for ${portal.name}.`,
+    };
+  }
+
+  // Scheduled syncs can only reuse a saved session; nobody is there to type
+  // a code.
+  const interactive = send !== NOOP_SEND;
+  const result = await portal.scrape({
+    id: credentials.id,
+    phone: credentials.phoneNumber,
+    savedSession: credentials.otpLongTermToken,
+    awaitOtp: interactive
+      ? async () => {
+          const bridge = registerOtpRequest(syncRunId, workspaceId, provider);
+          send("provider-2fa-needed", {
+            workspaceId,
+            workspaceName,
+            provider,
+            syncRunId,
+          });
+          return bridge.wait();
+        }
+      : undefined,
+    onOtpSubmitted: () => {
+      send("provider-2fa-submitted", {
+        workspaceId,
+        workspaceName,
+        provider,
+        syncRunId,
+      });
+    },
+  });
+  if (result.otpLongTermToken) {
+    updateCredentialField(
+      workspaceId,
+      credentialId,
+      "otpLongTermToken",
+      result.otpLongTermToken
+    );
+  }
+  return result;
+}
+
+/** Portals whose first sign-in runs in a visible window (Menora, Analyst). */
+async function runVisiblePortalScrape(
+  args: RunScrapeArgs,
+  scrape: (o: VisiblePortalOptions) => Promise<VisiblePortalResult>
+): Promise<ScrapeResult> {
+  const { workspaceId, workspaceName, credentialId, provider, credentials, send } =
+    args;
+
+  const result = await scrape({
+    id: credentials.id ?? "",
+    phone: credentials.phoneNumber ?? "",
+    savedSession: credentials.otpLongTermToken,
+    interactive: send !== NOOP_SEND,
+    onWindowOpen: () => {
+      send("provider-2fa-manual", { workspaceId, workspaceName, provider });
+    },
+  });
+  if (result.otpLongTermToken) {
+    updateCredentialField(
+      workspaceId,
+      credentialId,
+      "otpLongTermToken",
+      result.otpLongTermToken
+    );
+  }
+  return result;
+}
+
 async function syncOneCredential(
   workspaceId: number,
   workspaceName: string,
@@ -487,6 +607,7 @@ async function syncOneCredential(
     syncRunId
   );
   applyMerchantRulesToSyncRun(workspaceId, syncRunId);
+  markInternalTransfers(workspaceId);
   if (result.investments?.length) {
     try {
       saveInvestmentSnapshots(

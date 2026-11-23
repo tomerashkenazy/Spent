@@ -5,13 +5,25 @@ import { useLocale, useTranslations } from "next-intl";
 import { CardShell } from "@/components/home/card-shell";
 import { formatCurrency } from "@/lib/formatters";
 import type { Locale } from "@/i18n/routing";
-import type { InvestmentAccount, InvestmentHistoryPoint } from "@/lib/types";
+import type {
+  InvestmentAccount,
+  InvestmentGroup,
+  InvestmentHistoryPoint,
+} from "@/lib/types";
 import { ChangePill } from "./change-pill";
 
 interface Props {
   accounts: InvestmentAccount[];
   /** null when the history query failed. */
   history: InvestmentHistoryPoint[] | null;
+  /** Which history series to chart, matching the accounts passed in. */
+  group: InvestmentGroup;
+  label: string;
+}
+
+interface ChartPoint {
+  date: string;
+  value: number;
 }
 
 function formatDay(isoDay: string, locale: Locale): string {
@@ -22,7 +34,7 @@ function formatDay(isoDay: string, locale: Locale): string {
   );
 }
 
-export function TotalCard({ accounts, history }: Props) {
+export function TotalCard({ accounts, history, group, label }: Props) {
   const t = useTranslations("investments");
   const locale = useLocale() as Locale;
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
@@ -38,16 +50,19 @@ export function TotalCard({ accounts, history }: Props) {
   const changePct = previous > 0 ? (change / previous) * 100 : null;
   const hasChange = accounts.some((a) => a.previousValue != null);
 
-  const points = history ?? [];
+  const points: ChartPoint[] = (history ?? []).map((p) => ({
+    date: p.date,
+    value: p[group],
+  }));
   const hovered = hoverIdx != null ? points[hoverIdx] : null;
 
   return (
-    <CardShell label={t("totalLabel")}>
+    <CardShell label={label}>
       <div className="flex flex-1 flex-col gap-5">
         <div className="flex flex-wrap items-end gap-x-6 gap-y-2">
           <div className="flex flex-col">
             <span className="font-serif text-4xl leading-none tracking-tight tabular-nums md:text-5xl">
-              {formatCurrency(hovered ? hovered.total : total)}
+              {formatCurrency(hovered ? hovered.value : total)}
             </span>
             <span className="mt-2 text-sm text-muted-foreground">
               {hovered
@@ -87,7 +102,7 @@ function LineChart({
   onHover,
   locale,
 }: {
-  points: InvestmentHistoryPoint[];
+  points: ChartPoint[];
   hoverIdx: number | null;
   onHover: (i: number | null) => void;
   locale: Locale;
@@ -95,7 +110,7 @@ function LineChart({
   const width = 600;
   const height = 140;
   const padY = 8;
-  const values = points.map((p) => p.total);
+  const values = points.map((p) => p.value);
   const min = Math.min(...values);
   const max = Math.max(...values);
   // Zoom into the range, but keep a floor so a flat line does not divide by 0.
@@ -106,7 +121,7 @@ function LineChart({
   const y = (v: number) => padY + (1 - (v - lo) / (hi - lo)) * (height - padY * 2);
 
   const line = points
-    .map((p, i) => `${i === 0 ? "M" : "L"}${x(i).toFixed(1)},${y(p.total).toFixed(1)}`)
+    .map((p, i) => `${i === 0 ? "M" : "L"}${x(i).toFixed(1)},${y(p.value).toFixed(1)}`)
     .join(" ");
   const area = `${line} L${width},${height} L0,${height} Z`;
 
@@ -163,7 +178,7 @@ function LineChart({
             className="pointer-events-none absolute h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-foreground ring-2 ring-card ltr:-translate-x-1/2 rtl:translate-x-1/2"
             style={{
               insetInlineStart: `${(x(hoverIdx) / width) * 100}%`,
-              top: `${(y(points[hoverIdx].total) / height) * 100}%`,
+              top: `${(y(points[hoverIdx].value) / height) * 100}%`,
             }}
           />
         )}

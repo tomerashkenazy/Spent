@@ -25,6 +25,14 @@ import { ProviderBadge } from "@/components/setup/provider-badge";
 import { SectionShell } from "@/components/settings/section-shell";
 import { BankDetailSheet } from "@/components/settings/bank-detail-sheet";
 import { useBankSync } from "@/components/settings/use-bank-sync";
+import { OtpInputArea } from "@/components/dashboard/sync-progress-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { listIntegrations } from "@/lib/api";
 import { BANK_PROVIDERS } from "@/lib/types";
 import { translateProviderName, useFormatterLabels } from "@/lib/i18n-data";
@@ -56,7 +64,16 @@ export default function BankSettingsPage() {
     queryKey: ["integrations"],
     queryFn: listIntegrations,
   });
-  const { start, stateFor, anySyncing } = useBankSync();
+  const { start, stateFor, anySyncing, otpRequest, submitOtp, cancelOtp } =
+    useBankSync();
+  const otpProviderName = otpRequest
+    ? translateProviderName(
+        otpRequest.provider,
+        BANK_PROVIDERS.find((b) => b.id === otpRequest.provider)?.name ??
+          otpRequest.provider,
+        tBanks
+      )
+    : "";
   const [sheet, setSheet] = useState<SheetState>({
     open: false,
     mode: "edit",
@@ -269,6 +286,25 @@ export default function BankSettingsPage() {
         connected={sheetIntegration}
         onClose={() => setSheet((s) => ({ ...s, open: false }))}
       />
+
+      <Dialog
+        open={otpRequest !== null}
+        onOpenChange={(open) => {
+          if (!open) cancelOtp();
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("otpTitle")}</DialogTitle>
+            <DialogDescription>
+              {t("otpDescription", { provider: otpProviderName })}
+            </DialogDescription>
+          </DialogHeader>
+          {otpRequest ? (
+            <OtpInputArea syncRunId={otpRequest.syncRunId} onSubmit={submitOtp} />
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

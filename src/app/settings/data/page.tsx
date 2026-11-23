@@ -24,7 +24,7 @@ import {
 import { toast } from "sonner";
 import { SectionShell, SettingCard } from "@/components/settings/section-shell";
 import { WorkspaceDangerCard } from "@/components/settings/workspace-controls";
-import { BANK_PROVIDERS } from "@/lib/types";
+import { BANK_PROVIDERS, type LoginBrowser } from "@/lib/types";
 import { translateProviderName } from "@/lib/i18n-data";
 
 export default function DataSettingsPage() {
@@ -38,7 +38,13 @@ export default function DataSettingsPage() {
   return (
     <SectionShell title={t("title")} description={t("description")}>
       {settings ? (
-        <ShowBrowserCard initial={settings.showBrowser} />
+        <>
+          <ShowBrowserCard initial={settings.showBrowser} />
+          <LoginBrowserCard
+            initial={settings.loginBrowser}
+            firefoxInstalled={settings.firefoxInstalled}
+          />
+        </>
       ) : (
         <SettingCard>
           <div className="text-sm text-muted-foreground">{tCommon("loading")}</div>
@@ -300,6 +306,78 @@ function ExcludedMerchantsCard() {
           })}
         </ul>
       )}
+    </SettingCard>
+  );
+}
+
+function LoginBrowserCard({
+  initial,
+  firefoxInstalled,
+}: {
+  initial: LoginBrowser;
+  firefoxInstalled: boolean;
+}) {
+  const t = useTranslations("settings.data");
+  const queryClient = useQueryClient();
+  const [value, setValue] = useState<LoginBrowser>(initial);
+  const mutation = useMutation({
+    mutationFn: (next: LoginBrowser) => updateSettings({ loginBrowser: next }),
+    onSuccess: (_, next) => {
+      queryClient.invalidateQueries({ queryKey: ["settings"] });
+      toast.success(
+        next === "firefox" ? t("loginBrowserFirefoxSaved") : t("loginBrowserChromeSaved")
+      );
+    },
+  });
+
+  const options: { id: LoginBrowser; label: string; disabled: boolean }[] = [
+    { id: "chrome", label: "Chrome", disabled: false },
+    { id: "firefox", label: "Firefox", disabled: !firefoxInstalled && value !== "firefox" },
+  ];
+
+  const choose = (next: LoginBrowser) => {
+    if (next === value) return;
+    setValue(next);
+    mutation.mutate(next);
+  };
+
+  return (
+    <SettingCard>
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-1">
+          <Label>{t("loginBrowserLabel")}</Label>
+          <p className="text-xs text-muted-foreground">{t("loginBrowserHint")}</p>
+          {!firefoxInstalled && (
+            <p className="text-xs text-muted-foreground">{t("loginBrowserFirefoxMissing")}</p>
+          )}
+        </div>
+        <div
+          role="radiogroup"
+          aria-label={t("loginBrowserLabel")}
+          className="flex shrink-0 gap-0.5 rounded-full border border-border bg-background p-0.5"
+        >
+          {options.map((o) => {
+            const active = value === o.id;
+            return (
+              <button
+                key={o.id}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                disabled={o.disabled || mutation.isPending}
+                onClick={() => choose(o.id)}
+                className={`rounded-full px-3 py-1 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                  active
+                    ? "bg-foreground text-background"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {o.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
     </SettingCard>
   );
 }

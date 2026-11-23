@@ -39,6 +39,67 @@ export interface TransactionWithCategory extends Transaction {
   categoryName: string | null;
   categoryColor: string | null;
   isExcluded: boolean;
+  /** The project this transaction is assigned to, if any. */
+  projectId: number | null;
+  projectName: string | null;
+}
+
+export type ProjectItemStatus = "unpaid" | "deposit" | "paid";
+
+export const PROJECT_ITEM_STATUSES: readonly ProjectItemStatus[] = [
+  "paid",
+  "deposit",
+  "unpaid",
+];
+
+export interface Project {
+  id: number;
+  name: string;
+  budgetAmount: number | null;
+  /** When true, linked transactions are left out of monthly spending. */
+  excludesFromSpending: boolean;
+  /** Paid in full or as a deposit. */
+  spent: number;
+  /** Committed but not paid yet. */
+  unpaid: number;
+  itemCount: number;
+  createdAt: string;
+}
+
+export interface ProjectItem {
+  id: number;
+  projectId: number;
+  /** Set when the row comes from a synced transaction. */
+  transactionId: number | null;
+  date: string;
+  description: string;
+  /** Positive number = money spent. */
+  amount: number;
+  paidFromCredentialId: number | null;
+  /** Label of the connected account it was paid from. */
+  paidFromLabel: string | null;
+  /** Free-text payer for money outside connected accounts (cash, gifts). */
+  paidFromText: string | null;
+  category: string | null;
+  status: ProjectItemStatus;
+  notes: string | null;
+}
+
+export interface ProjectItemInput {
+  date?: string;
+  description?: string;
+  amount?: number;
+  paidFromCredentialId?: number | null;
+  paidFromText?: string | null;
+  category?: string | null;
+  status?: ProjectItemStatus;
+  notes?: string | null;
+}
+
+export interface ProjectInput {
+  name?: string;
+  budgetAmount?: number | null;
+  excludesFromSpending?: boolean;
 }
 
 export type CategoryKind = "expense" | "income";
@@ -246,9 +307,20 @@ export type InvestmentKind =
   | "hishtalmut"
   | "gemel_lehashkaa";
 
-/** Brokerage accounts are liquid; everything else is long-term savings. */
-export function isLongTermInvestment(kind: InvestmentKind): boolean {
-  return kind !== "brokerage";
+/**
+ * The Investments page has two screens. `investments` holds money the user
+ * can reach (brokerage, gemel lehashkaa); `savings` holds retirement and
+ * study funds (pension, kupat gemel, keren hishtalmut).
+ */
+export type InvestmentGroup = "investments" | "savings";
+
+export const INVESTMENT_GROUPS: Record<InvestmentGroup, readonly InvestmentKind[]> = {
+  investments: ["brokerage", "gemel_lehashkaa"],
+  savings: ["pension", "hishtalmut", "gemel"],
+};
+
+export function investmentGroup(kind: InvestmentKind): InvestmentGroup {
+  return INVESTMENT_GROUPS.savings.includes(kind) ? "savings" : "investments";
 }
 
 export interface InvestmentHolding {
@@ -286,8 +358,8 @@ export interface InvestmentAccount {
 
 export interface InvestmentHistoryPoint {
   date: string;
-  brokerage: number;
-  longTerm: number;
+  investments: number;
+  savings: number;
   total: number;
 }
 
@@ -349,7 +421,13 @@ export interface AppSettings {
   autoSyncEnabled: boolean;
   autoSyncTime: string;
   language: "en" | "he";
+  /** Which browser opens visible login windows. Global, not per workspace. */
+  loginBrowser: LoginBrowser;
+  /** Read-only: whether a Firefox install was found on this machine. */
+  firefoxInstalled: boolean;
 }
+
+export type LoginBrowser = "chrome" | "firefox";
 
 export type BankProvider =
   | "isracard"
@@ -371,7 +449,11 @@ export type BankProvider =
   | "behatsdaa"
   | "oneZero"
   | "pepper"
-  | "psagot";
+  | "psagot"
+  | "harel"
+  | "menora"
+  | "analyst"
+  | "more";
 
 export interface CredentialField {
   key: string;
@@ -399,7 +481,8 @@ export interface BankProviderInfo {
   enabled: boolean;
   /**
    * True when the underlying scraper supports OTP-driven login flows that we
-   * can drive in-process (OneZero, Pepper, Hapoalim, Psagot). Leumi/etc. expose
+   * can drive in-process (OneZero, Pepper, Hapoalim, Psagot and the pension
+   * portals). Leumi/etc. expose
    * the methods on the base interface but no concrete implementation, so 2FA
    * on those banks falls back to the manual (showBrowser) path.
    */
@@ -835,6 +918,122 @@ export const BANK_PROVIDERS: BankProviderInfo[] = [
     supportsProgrammaticTwoFactor: true,
     twoFactorNote:
       "Psagot texts a code every time you sign in. Spent keeps the session while Psagot allows it, so a sync soon after another one skips the code. Otherwise enter the code in the sync window.",
+  },
+  {
+    id: "harel",
+    name: "Harel",
+    kind: "investment",
+    color: "#1F5FAD",
+    blurb: "Pension, gemel and study funds",
+    domain: "harel-group.co.il",
+    credentialFields: [
+      {
+        key: "id",
+        label: "ID Number",
+        type: "text",
+        placeholder: "9-digit Israeli ID",
+        maxLength: 9,
+        numeric: true,
+      },
+      {
+        key: "phoneNumber",
+        label: "Phone number",
+        type: "tel",
+        placeholder: "0501234567",
+        hint: "The mobile number registered with Harel. The SMS code is sent to it.",
+      },
+    ],
+    enabled: true,
+    supportsProgrammaticTwoFactor: true,
+    twoFactorNote:
+      "Harel signs in with an SMS code instead of a password. Spent keeps the session while Harel allows it, so later syncs often skip the code. Otherwise enter the code in the sync window.",
+  },
+  {
+    id: "menora",
+    name: "Menora Mivtachim",
+    kind: "investment",
+    color: "#5B2A86",
+    blurb: "Pension, gemel and study funds",
+    domain: "menoramivt.co.il",
+    credentialFields: [
+      {
+        key: "id",
+        label: "ID Number",
+        type: "text",
+        placeholder: "9-digit Israeli ID",
+        maxLength: 9,
+        numeric: true,
+      },
+      {
+        key: "phoneNumber",
+        label: "Phone number",
+        type: "tel",
+        placeholder: "0501234567",
+        hint: "The mobile number registered with Menora. Spent fills it in for you in the sign-in window.",
+      },
+    ],
+    enabled: true,
+    supportsProgrammaticTwoFactor: true,
+    twoFactorNote:
+      "Menora's sign-in page has a security check that only a person can pass. When needed, Run Sync now opens a Chrome window with your details filled in: pass the check and enter the SMS code there. Spent keeps the session, so later syncs run without the window until Menora signs you out.",
+  },
+  {
+    id: "analyst",
+    name: "Analyst",
+    kind: "investment",
+    color: "#1E2C6E",
+    blurb: "Gemel and study funds",
+    domain: "analyst.co.il",
+    credentialFields: [
+      {
+        key: "id",
+        label: "ID Number",
+        type: "text",
+        placeholder: "9-digit Israeli ID",
+        maxLength: 9,
+        numeric: true,
+      },
+      {
+        key: "phoneNumber",
+        label: "Phone number",
+        type: "tel",
+        placeholder: "0501234567",
+        hint: "The mobile number registered with Analyst. Spent fills it in for you in the sign-in window.",
+      },
+    ],
+    enabled: true,
+    supportsProgrammaticTwoFactor: true,
+    twoFactorNote:
+      "Analyst's sign-in has a security check that turns away automated browsers. When needed, Run Sync now opens a window with your details filled in: click \"שלחו לי קוד\" and enter the SMS code there. Spent keeps the session, so later syncs run without the window until Analyst signs you out.",
+  },
+  {
+    id: "more",
+    name: "More",
+    kind: "investment",
+    color: "#E6007E",
+    blurb: "Gemel, study and pension funds",
+    domain: "more.co.il",
+    credentialFields: [
+      {
+        key: "id",
+        label: "ID Number",
+        type: "text",
+        placeholder: "9-digit Israeli ID",
+        maxLength: 9,
+        numeric: true,
+      },
+      {
+        key: "phoneNumber",
+        label: "Phone number",
+        type: "tel",
+        placeholder: "0501234567",
+        hint: "The mobile number registered with More. The SMS code is sent to it.",
+      },
+    ],
+    enabled: true,
+    supportsProgrammaticTwoFactor: true,
+    twoFactorNote:
+      "More signs in with an SMS code instead of a password. Spent keeps the session while More allows it, so later syncs often skip the code. Otherwise enter the code in the sync window.",
   },
 ];
 

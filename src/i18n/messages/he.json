@@ -37,7 +37,8 @@
     "investments": "השקעות",
     "settings": "הגדרות",
     "starOnGitHub": "תייגו ב־GitHub",
-    "brandTagline": "הכסף שלכם · קוד פתוח"
+    "brandTagline": "הכסף שלכם · קוד פתוח",
+    "projects": "פרויקטים"
   },
   "investments": {
     "pageTitle": "השקעות",
@@ -49,10 +50,6 @@
     "sinceDate": "שינוי מאז {date}",
     "asOf": "נכון ל־{date}",
     "historyBuilding": "הגרף מתמלא עם כל סנכרון. כל סנכרון מוסיף נקודה אחת ליום.",
-    "longTerm": "חיסכון לטווח ארוך",
-    "longTermHint": "פנסיה, גמל והשתלמות",
-    "brokerage": "תיקי השקעות",
-    "brokerageHint": "ניירות ערך שאפשר למכור בכל עת",
     "kinds": {
       "brokerage": "תיק ני״ע",
       "pension": "פנסיה",
@@ -74,8 +71,37 @@
     "feeOnDeposits": "דמי ניהול מהפקדה",
     "feeOnBalance": "דמי ניהול מצבירה",
     "emptyTitle": "אין עדיין השקעות",
-    "emptyBody": "תיקי ניירות ערך בבנק הפועלים ובבנק לאומי נקראים עם פרטי הכניסה הקיימים לבנק. את פסגות אפשר להוסיף כחיבור נפרד. הריצו סנכרון והם יופיעו כאן.",
-    "emptyAction": "ניהול חיבורים"
+    "emptyBody": "תיקי ניירות ערך בבנק הפועלים ובבנק לאומי נקראים עם פרטי הכניסה הקיימים לבנק. את פסגות, הראל, מנורה, אנליסט ומור אפשר להוסיף כחיבורים נפרדים. הריצו סנכרון והם יופיעו כאן.",
+    "emptyAction": "ניהול חיבורים",
+    "groups": {
+      "investments": "השקעות",
+      "savings": "פנסיה והשתלמות"
+    },
+    "groupTotals": {
+      "investments": "סך הכול מושקע",
+      "savings": "סך הכול חיסכון"
+    },
+    "groupEmpty": {
+      "investments": "עדיין לא חוברו תיקי השקעות.",
+      "savings": "עדיין לא חוברו קופות פנסיה, גמל או השתלמות."
+    },
+    "kindsPlural": {
+      "brokerage": "תיקי ני״ע",
+      "pension": "פנסיה",
+      "gemel": "קופות גמל",
+      "hishtalmut": "קרנות השתלמות",
+      "gemel_lehashkaa": "גמל להשקעה"
+    },
+    "kindHints": {
+      "brokerage": "ניירות ערך שאפשר למכור בכל עת",
+      "pension": "חיסכון לפרישה, נעול עד גיל פרישה",
+      "gemel": "קופות חיסכון לטווח ארוך",
+      "hishtalmut": "נזילה אחרי שש שנים",
+      "gemel_lehashkaa": "קופות השקעה שאפשר למשוך בכל עת"
+    },
+    "moneyMarketLabel": "קרנות כספיות",
+    "moneyMarketShare": "{percent}% מההשקעות שלכם",
+    "moneyMarketPill": "כספית"
   },
   "home": {
     "pageTitle": "בית",
@@ -231,7 +257,11 @@
     "includeToast": "הוחזר לסכומים",
     "paginationRange": "{from} עד {to} מתוך {total}",
     "previous": "הקודם",
-    "next": "הבא"
+    "next": "הבא",
+    "addToProject": "הוספה לפרויקט",
+    "addToProjectToast": "נוסף ל{project}",
+    "rowTransfer": "העברה · לא נספרת",
+    "rowTransferTooltip": "העברה בין החשבונות שלכם או תשלום חיוב כרטיס. לא נכללת בהוצאות ובהכנסות."
   },
   "dashboard": {
     "syncing": "מסנכרן…",
@@ -410,7 +440,9 @@
       "justNow": "ממש עכשיו",
       "minutesAgo": "לפני {count} דק׳",
       "hoursAgo": "לפני {count} שעות",
-      "daysAgo": "לפני {count} ימים"
+      "daysAgo": "לפני {count} ימים",
+      "otpTitle": "הזינו את קוד ה־SMS",
+      "otpDescription": "{provider} שלחו קוד חד־פעמי לטלפון שלכם. הזינו אותו כדי לסיים את הסנכרון. סגירת החלון מבטלת את הסנכרון."
     },
     "ai": {
       "title": "AI ואוטומציה",
@@ -470,9 +502,14 @@
       "title": "נתונים ופרטיות",
       "description": "Spent רץ מקומית. אישורי הגישה שלכם מוצפנים במנוחה ואינם עוזבים את המחשב שלכם.",
       "showBrowserLabel": "הצגת דפדפן בזמן הסנכרון",
-      "showBrowserHint": "פותח חלון Chromium גלוי כדי שתוכלו לצפות בסקרייפינג (שימושי לדיבאג או לפתרון אימות דו־שלבי / captcha). גם מפעיל לוגים מורחבים של הסקרייפר בטרמינל הפיתוח.",
+      "showBrowserHint": "פותח חלון דפדפן גלוי כדי שתוכלו לצפות בסקרייפינג (שימושי לדיבאג או לפתרון אימות דו־שלבי / captcha). גם מפעיל לוגים מורחבים של הסקרייפר בטרמינל הפיתוח.",
       "browserVisibleSaved": "הדפדפן יהיה גלוי בסנכרון הבא",
       "browserHiddenSaved": "הדפדפן יישאר מוסתר",
+      "loginBrowserLabel": "דפדפן לחלונות התחברות",
+      "loginBrowserHint": "חלונות התחברות, אימות דו־שלבי ו־captcha ייפתחו בדפדפן הזה, תמיד בחלון נפרד ונקי, בלי לגעת בפרופיל, בסיסמאות השמורות או בהיסטוריה שלכם. סנכרונים ברקע נשארים מוסתרים בכל מקרה.",
+      "loginBrowserFirefoxMissing": "Firefox לא נמצא במחשב. התקינו אותו או הגדירו את SPENT_FIREFOX_PATH למיקום שלו.",
+      "loginBrowserFirefoxSaved": "חלונות התחברות ייפתחו ב־Firefox",
+      "loginBrowserChromeSaved": "חלונות התחברות ייפתחו ב־Chrome",
       "storageCardTitle": "איך הנתונים שלכם נשמרים",
       "storageCardDescription": "אישורי הבנק ומפתח ה־Claude API שלכם מוצפנים עם AES-256-GCM. מפתח ההצפנה נמצא ב־data/.encryption-key במחשב שלכם (מחוץ ל־git) ומיוצר אוטומטית בהפעלה הראשונה. כל נתוני התנועות נמצאים ב־data/spent.db. כדי לאפס הכל, עצרו את שרת הפיתוח ומחקו את תיקיית data/.",
       "excludedTitle": "בתי עסק מוחרגים",
@@ -779,8 +816,12 @@
         "placeholder": "הסיסמה שאתם משתמשים בה ב־digital.isracard.co.il",
         "hint": "אותה סיסמה שאתם משתמשים בה להתחברות באתר ישראכרט."
       },
-      "username": { "label": "שם משתמש" },
-      "userCode": { "label": "קוד משתמש" },
+      "username": {
+        "label": "שם משתמש"
+      },
+      "userCode": {
+        "label": "קוד משתמש"
+      },
       "num": {
         "label": "מספר חשבון",
         "discountPlaceholder": "מספר חשבון דיסקונט שלכם",
@@ -804,6 +845,22 @@
         "placeholder": "+972501234567",
         "hint": "לאן יישלח קוד ה־SMS החד־פעמי. פורמט בינלאומי כולל קידומת המדינה."
       }
+    },
+    "harel": {
+      "name": "הראל",
+      "blurb": "פנסיה, גמל והשתלמות"
+    },
+    "menora": {
+      "name": "מנורה מבטחים",
+      "blurb": "פנסיה, גמל והשתלמות"
+    },
+    "analyst": {
+      "name": "אנליסט",
+      "blurb": "גמל והשתלמות"
+    },
+    "more": {
+      "name": "מור",
+      "blurb": "גמל, השתלמות ופנסיה"
     }
   },
   "ollamaModels": {
@@ -821,5 +878,68 @@
     "daysAgoShort": "לפני {count} ימים",
     "weeksAgoShort": "לפני {count} שבועות",
     "monthsAgoShort": "לפני {count} חודשים"
+  },
+  "projects": {
+    "pageTitle": "פרויקטים",
+    "newProject": "פרויקט חדש",
+    "projectSettings": "הגדרות פרויקט",
+    "createTitle": "פרויקט חדש",
+    "editTitle": "הגדרות פרויקט",
+    "createDescription": "מעקב אחרי מטרה חד־פעמית כמו חתונה, שיפוץ או טיול, עם תקציב משלה.",
+    "nameLabel": "שם",
+    "namePlaceholder": "חתונה",
+    "budgetLabel": "תקציב (לא חובה)",
+    "budgetPlaceholder": "150000",
+    "excludeLabel": "לא לכלול בהוצאות החודשיות",
+    "excludeHint": "הוצאות שנוספות לכאן לא נספרות בבית ובתקציב, כך שתשלום גדול חד־פעמי לא מעוות את החודש.",
+    "createAction": "יצירת פרויקט",
+    "confirmDelete": "לחצו שוב למחיקה",
+    "deletedToast": "{name} נמחק",
+    "emptyTitle": "תכנון הוצאה גדולה",
+    "emptyBody": "פרויקט מרכז את כל התשלומים למטרה אחת, כמו חתונה: מי שילם, על מה, וכמה נשאר מהתקציב.",
+    "addExpense": "הוספת הוצאה",
+    "addExpenseTitle": "הוספת הוצאה",
+    "addExpenseDescription": "בחרו תנועה מסונכרנת, או הזינו ידנית עבור מזומן, מתנות או חשבונות שלא מחוברים.",
+    "fromTransactions": "מהתנועות",
+    "manualEntry": "הזנה ידנית",
+    "searchPlaceholder": "חיפוש לפי בית עסק או תיאור",
+    "noTransactionsFound": "לא נמצאו הוצאות מתאימות.",
+    "alreadyAdded": "כבר בפרויקט",
+    "addAction": "הוספה לפרויקט",
+    "descriptionPlaceholder": "מקדמה לצלם",
+    "categoryPlaceholder": "אולם, צילום, שמלה…",
+    "notesPlaceholder": "הוספת הערה",
+    "expensesLabel": "הוצאות",
+    "noItems": "אין עדיין הוצאות. הוסיפו מהתנועות, או השתמשו ב”הוספה לפרויקט“ בעמוד התנועות.",
+    "colDate": "תאריך",
+    "colDescription": "תיאור",
+    "colAmount": "סכום",
+    "colPaidFrom": "שולם מ",
+    "colCategory": "קטגוריה",
+    "colStatus": "סטטוס",
+    "colNotes": "הערות",
+    "rowActions": "פעולות",
+    "removeRow": "הסרה מהפרויקט",
+    "removedToast": "הוסר מהפרויקט",
+    "linkedTransaction": "מקושר לתנועה מסונכרנת",
+    "totalRow": "סך הכול ({count, plural, one {הוצאה אחת} other {# הוצאות}})",
+    "status": {
+      "paid": "שולם",
+      "deposit": "מקדמה",
+      "unpaid": "טרם שולם"
+    },
+    "paidFromNone": "לא נבחר",
+    "paidFromOther": "אחר…",
+    "paidFromOtherPlaceholder": "למשל קרן כספית, מזומן",
+    "summarySpent": "הוצאנו",
+    "ofBudget": "מתוך {budget} · נשארו {left}",
+    "overBudget": "חריגה של {amount}",
+    "noBudget": "לא הוגדר תקציב. אפשר להוסיף בהגדרות הפרויקט.",
+    "summaryByPayer": "לפי מי שילם",
+    "summaryCommitted": "נשאר לשלם",
+    "summaryUnpaidHint": "שורות שסומנו טרם שולם",
+    "summaryDeposits": "מקדמות ששולמו",
+    "summaryMoneyMarket": "נשאר בקרנות הכספיות",
+    "summaryMoneyMarketHint": "בכל התיקים המחוברים, נכון לסנכרון האחרון"
   }
 }

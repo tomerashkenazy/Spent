@@ -54,21 +54,25 @@ export function TwoFactorSection({
         </p>
       )}
 
-      <div className="flex items-center justify-between gap-3">
-        <Label
-          htmlFor={`${info.id}-manual-2fa`}
-          className="text-sm font-medium"
-        >
-          This account requires 2FA
-        </Label>
-        <Switch
-          id={`${info.id}-manual-2fa`}
-          checked={requiresManualTwoFactor}
-          onCheckedChange={onChangeManualFlag}
-          disabled={supportsProgrammatic}
-        />
-      </div>
-      {supportsProgrammatic ? (
+      {/* Providers with their own note explain their whole sign-in, so the
+          manual-2FA switch would only contradict it. */}
+      {info.twoFactorNote ? null : (
+        <div className="flex items-center justify-between gap-3">
+          <Label
+            htmlFor={`${info.id}-manual-2fa`}
+            className="text-sm font-medium"
+          >
+            This account requires 2FA
+          </Label>
+          <Switch
+            id={`${info.id}-manual-2fa`}
+            checked={requiresManualTwoFactor}
+            onCheckedChange={onChangeManualFlag}
+            disabled={supportsProgrammatic}
+          />
+        </div>
+      )}
+      {supportsProgrammatic && !info.twoFactorNote ? (
         <p className="text-[11px] text-muted-foreground">
           Not needed for {info.name} — 2FA is handled programmatically.
         </p>

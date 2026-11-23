@@ -6,7 +6,11 @@ import {
 import { scrapeBank } from "@/server/scrapers";
 import { scrapePepperWithToken } from "@/server/scrapers/pepper";
 import { scrapePsagotWithSession } from "@/server/scrapers/psagot";
-import type { BankProvider } from "@/lib/types";
+import { scrapeAnalyst } from "@/server/scrapers/analyst";
+import { scrapeHarel } from "@/server/scrapers/harel";
+import { scrapeMenora } from "@/server/scrapers/menora";
+import { scrapeMore } from "@/server/scrapers/more";
+import { BANK_PROVIDERS, type BankProvider } from "@/lib/types";
 import { getWorkspaceIdFromRequest } from "@/server/lib/workspace-context";
 
 export async function POST(request: Request) {
@@ -56,6 +60,45 @@ export async function POST(request: Request) {
       success: true,
       message: "Connection successful",
       accountsFound: psagot.investments?.length ?? 0,
+    });
+  } else if (
+    body.provider === "harel" ||
+    body.provider === "analyst" ||
+    body.provider === "more" ||
+    body.provider === "menora"
+  ) {
+    // These sign in with an SMS code (Menora and Analyst in a visible window),
+    // which only a sync can collect, so a test reuses a saved session only.
+    const session = credentials.otpLongTermToken;
+    const opts = {
+      id: credentials.id ?? "",
+      phone: credentials.phoneNumber ?? "",
+      savedSession: session,
+    };
+    const name =
+      BANK_PROVIDERS.find((b) => b.id === body.provider)?.name ?? body.provider;
+    const pension = !session
+      ? null
+      : body.provider === "menora"
+        ? await scrapeMenora({ ...opts, interactive: false })
+        : body.provider === "analyst"
+          ? await scrapeAnalyst({ ...opts, interactive: false })
+          : body.provider === "harel"
+            ? await scrapeHarel(opts)
+            : await scrapeMore(opts);
+    if (!pension?.success) {
+      return NextResponse.json({
+        success: false,
+        message:
+          body.provider === "menora" || body.provider === "analyst"
+            ? `${name} signs in through a browser window. Save the account, then run Sync now and sign in in the window that opens.`
+            : `${name} verifies each sign-in with an SMS code. Save the account, then run Sync now and enter the code you receive.`,
+      });
+    }
+    return NextResponse.json({
+      success: true,
+      message: "Connection successful",
+      accountsFound: pension.investments?.length ?? 0,
     });
   } else if (body.provider === "pepper") {
     // Pepper can only be tested once a sync has saved its device token; the
